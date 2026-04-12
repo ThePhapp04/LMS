@@ -183,6 +183,27 @@ async function migrate() {
     `);
     console.log('  + lesson_progress table ready.');
 
+    // lesson_progress table ready above
+    
+    // events table for Timetable
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS events (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        course_id INT NOT NULL,
+        lecturer_id INT NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        start_time DATETIME NOT NULL,
+        end_time DATETIME NOT NULL,
+        event_type ENUM('lecture', 'deadline', 'livestream', 'other') DEFAULT 'lecture',
+        meeting_link VARCHAR(500),
+        status ENUM('upcoming', 'completed', 'cancelled') DEFAULT 'upcoming',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+        FOREIGN KEY (lecturer_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `);
+    console.log('  + events table ready.');
+
     console.log('\nAll migrations completed successfully!');
   } catch (err) {
     console.error('Migration error:', err.message);

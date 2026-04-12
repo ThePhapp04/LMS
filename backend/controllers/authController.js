@@ -61,9 +61,48 @@ exports.login = async (req, res) => {
 
 exports.getMe = async (req, res) => {
   try {
-    const [users] = await db.query('SELECT id, name, email, role FROM users WHERE id = ?', [req.user.id]);
+    const [users] = await db.query('SELECT id, name, email, role, avatar_url FROM users WHERE id = ?', [req.user.id]);
     if (users.length === 0) return res.status(404).json({ message: 'User not found' });
     res.json(users[0]);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.updateProfile = async (req, res) => {
+  const { name, currentPassword, newPassword } = req.body;
+  try {
+    const [users] = await db.query('SELECT * FROM users WHERE id = ?', [req.user.id]);
+    if (users.length === 0) return res.status(404).json({ message: 'User not found' });
+    const user = users[0];
+
+    // Handle avatar upload
+    let avatar_url = user.avatar_url;
+    if (req.file) avatar_url = `/uploads/${req.file.filename}`;
+
+    // Handle password change
+    let hashedPassword = user.password;
+    if (newPassword) {
+      if (!currentPassword) return res.status(400).json({ message: 'Current password is required' });
+      const isMatch = await bcrypt.compare(currentPassword, user.password);
+      if (!isMatch) return res.status(400).json({ message: 'Incorrect current password' });
+      const salt = await bcrypt.genSalt(10);
+      hashedPassword = await bcrypt.hash(newPassword, salt);
+    }
+
+    await db.query(
+      'UPDATE users SET name=?, password=?, avatar_url=? WHERE id=?',
+      [name || user.name, hashedPassword, avatar_url, req.user.id]
+    );
+
+    res.json({
+      id: user.id,
+      name: name || user.name,
+      email: user.email,
+      role: user.role,
+      avatar_url,
+      token: req.user.token // keep same token
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

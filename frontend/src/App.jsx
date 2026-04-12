@@ -7,11 +7,14 @@ import Dashboard from './pages/Dashboard';
 import CourseList from './pages/CourseList';
 import CourseDetail from './pages/CourseDetail';
 import CourseLearning from './pages/CourseLearning';
+import Timetable from './pages/Timetable';
 // we'll need to define Instructor Dashboard and Editor soon
 import InstructorDashboard from './pages/InstructorDashboard'; 
 import CourseEditor from './pages/CourseEditor';
 import Gradebook from './pages/Gradebook';
 import Forum from './pages/Forum';
+import Guide from './pages/Guide';
+import Profile from './pages/Profile';
 import { useContext } from 'react';
 import { AuthContext } from './contexts/AuthContext';
 
@@ -37,6 +40,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+            <Route path="/timetable" element={<PrivateRoute><Timetable /></PrivateRoute>} />
             <Route path="/courses" element={<PrivateRoute><CourseList /></PrivateRoute>} />
             <Route path="/courses/:id" element={<PrivateRoute><CourseDetail /></PrivateRoute>} />
             <Route path="/courses/:id/learn" element={<PrivateRoute allowLearningLayout={true}><CourseLearning /></PrivateRoute>} />
@@ -48,6 +52,8 @@ function App() {
 
             <Route path="/courses/:id/gradebook" element={<PrivateRoute><Gradebook /></PrivateRoute>} />
             <Route path="/forum" element={<PrivateRoute><Forum /></PrivateRoute>} />
+            <Route path="/guide" element={<PrivateRoute><Guide /></PrivateRoute>} />
+            <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
           </Routes>
         </main>
       </div>

@@ -20,6 +20,7 @@ app.use('/api/lessons', require('./routes/lessons'));
 app.use('/api/enrollments', require('./routes/enrollments'));
 app.use('/api/interactions', require('./routes/interactions'));
 app.use('/api/assignments', require('./routes/assignments'));
+app.use('/api/events', require('./routes/events'));
 
 app.get('/', (req, res) => {
   res.send('LMS API is running...');
