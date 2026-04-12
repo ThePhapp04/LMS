@@ -11,6 +11,8 @@ const translations = {
     nav_logout: 'Đăng xuất',
     nav_dashboard: 'Dashboard',
     nav_profile: 'Thông tin cá nhân',
+    nav_instructor: 'Quản lý giảng dạy',
+    nav_create_course: 'Tạo khóa học',
 
     // Common
     save: 'Lưu',
@@ -82,6 +84,8 @@ const translations = {
     nav_logout: 'Log Out',
     nav_dashboard: 'Dashboard',
     nav_profile: 'My Profile',
+    nav_instructor: 'Instructor Panel',
+    nav_create_course: 'Create Course',
 
     // Common
     save: 'Save',

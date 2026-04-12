@@ -2,7 +2,7 @@ import React, { useEffect, useState, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { AuthContext } from '../contexts/AuthContext';
-import { FileEdit, List, DollarSign, CheckCircle, ArrowLeft, Upload, Plus, Trash2 } from 'lucide-react';
+import { FileEdit, List, DollarSign, CheckCircle, ArrowLeft, Upload, Plus, Trash2, X, Video, File, FileText, ClipboardList, Calendar } from 'lucide-react';
 
 const CATEGORIES = ['General', 'Technology', 'Business', 'Design', 'Science', 'Language', 'Arts'];
 const LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
@@ -26,6 +26,22 @@ const CourseEditor = () => {
   
   // Curriculum State
   const [chapters, setChapters] = useState([]);
+  
+  // Lesson Modal State
+  const [showLessonModal, setShowLessonModal] = useState(false);
+  const [editingLesson, setEditingLesson] = useState(null);
+  const [currentChapterId, setCurrentChapterId] = useState(null);
+  const [lessonForm, setLessonForm] = useState({
+    title: '', content: '', video_url: '', lesson_order: 0, duration: ''
+  });
+  const [lessonFile, setLessonFile] = useState(null);
+
+  // Assignment Modal State
+  const [showAssignmentModal, setShowAssignmentModal] = useState(false);
+  const [editingAssignment, setEditingAssignment] = useState(null);
+  const [assignmentForm, setAssignmentForm] = useState({
+    title: '', description: '', type: 'essay', total_points: 100, due_date: ''
+  });
 
   useEffect(() => {
     if (user && user.role !== 'lecturer' && user.role !== 'admin') {
@@ -93,6 +109,133 @@ const CourseEditor = () => {
     if (!window.confirm('Xóa chương này?')) return;
     try {
       await api.delete(`/chapters/${chapId}`);
+      fetchCourse();
+    } catch {}
+  };
+
+  // Lesson Handlers
+  const openLessonModal = (chapterId, lesson = null) => {
+    setCurrentChapterId(chapterId);
+    setEditingLesson(lesson);
+    if (lesson) {
+      setLessonForm({
+        title: lesson.title,
+        content: lesson.content || '',
+        video_url: lesson.video_url || '',
+        lesson_order: lesson.lesson_order || 0,
+        duration: lesson.duration || ''
+      });
+    } else {
+      setLessonForm({ title: '', content: '', video_url: '', lesson_order: 0, duration: '' });
+    }
+    setLessonFile(null);
+    setShowLessonModal(true);
+  };
+
+  const closeLessonModal = () => {
+    setShowLessonModal(false);
+    setEditingLesson(null);
+    setCurrentChapterId(null);
+    setLessonForm({ title: '', content: '', video_url: '', lesson_order: 0, duration: '' });
+    setLessonFile(null);
+  };
+
+  const saveLessonForm = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const fd = new FormData();
+      fd.append('course_id', id);
+      fd.append('chapter_id', currentChapterId);
+      fd.append('title', lessonForm.title);
+      fd.append('content', lessonForm.content);
+      fd.append('video_url', lessonForm.video_url);
+      fd.append('lesson_order', lessonForm.lesson_order);
+      fd.append('duration', lessonForm.duration);
+      if (lessonFile) fd.append('file', lessonFile);
+
+      if (editingLesson) {
+        await api.put(`/lessons/${editingLesson.id}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      } else {
+        await api.post('/lessons', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      }
+      
+      closeLessonModal();
+      fetchCourse();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Lỗi lưu bài học');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteLesson = async (lessonId) => {
+    if (!window.confirm('Xóa bài học này?')) return;
+    try {
+      await api.delete(`/lessons/${lessonId}`);
+      fetchCourse();
+    } catch {}
+  };
+
+  // Assignment Handlers
+  const openAssignmentModal = (chapterId, assignment = null) => {
+    setCurrentChapterId(chapterId);
+    setEditingAssignment(assignment);
+    if (assignment) {
+      setAssignmentForm({
+        title: assignment.title,
+        description: assignment.description || '',
+        type: assignment.type || 'essay',
+        total_points: assignment.total_points || 100,
+        due_date: assignment.due_date ? assignment.due_date.substring(0, 16) : ''
+      });
+    } else {
+      setAssignmentForm({ title: '', description: '', type: 'essay', total_points: 100, due_date: '' });
+    }
+    setShowAssignmentModal(true);
+  };
+
+  const closeAssignmentModal = () => {
+    setShowAssignmentModal(false);
+    setEditingAssignment(null);
+    setCurrentChapterId(null);
+    setAssignmentForm({ title: '', description: '', type: 'essay', total_points: 100, due_date: '' });
+  };
+
+  const saveAssignmentForm = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const payload = {
+        title: assignmentForm.title,
+        description: assignmentForm.description,
+        chapter_id: currentChapterId,
+        type: assignmentForm.type,
+        total_points: assignmentForm.total_points,
+        due_date: assignmentForm.due_date || null
+      };
+
+      if (editingAssignment) {
+        // Note: Backend might not have PUT for assignments, we'll use POST/DELETE pattern
+        await api.delete(`/assignments/${editingAssignment.id}`);
+        await api.post(`/assignments/course/${id}`, payload);
+      } else {
+        await api.post(`/assignments/course/${id}`, payload);
+      }
+      
+      closeAssignmentModal();
+      fetchCourse();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Lỗi lưu bài tập');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteAssignment = async (assignmentId) => {
+    if (!window.confirm('Xóa bài tập này?')) return;
+    try {
+      await api.delete(`/assignments/${assignmentId}`);
       fetchCourse();
     } catch {}
   };
@@ -216,11 +359,94 @@ const CourseEditor = () => {
                           <button type="button" className="btn btn-ghost btn-sm" style={{ color: 'var(--error)' }} onClick={() => deleteChapter(ch.id)}><Trash2 size={16} /></button>
                         </div>
                         <div style={{ padding: '1rem' }}>
-                          {/* We instruct user to use CourseDetail old methods for heavy lesson logic or implement a simpler modal here. For brevity, linking to old editor flow or showing summary */}
-                          <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1rem' }}>
-                            {ch.lessons?.length || 0} bài học, {ch.assignments?.length || 0} bài tập. (Quản lý bài học tại giao diện cũ hoặc nâng cấp sau)
+                          {/* Lessons Section */}
+                          <div style={{ marginBottom: '1rem' }}>
+                            <div style={{ fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text)', fontSize: '0.9rem' }}>📚 Bài học</div>
+                            {ch.lessons && ch.lessons.length > 0 ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                                {ch.lessons.map((lesson, idx) => (
+                                  <div key={lesson.id} style={{ 
+                                    display: 'flex', 
+                                    justifyContent: 'space-between', 
+                                    alignItems: 'center',
+                                    padding: '0.75rem',
+                                    background: 'var(--bg)',
+                                    borderRadius: '4px',
+                                    border: '1px solid var(--border)'
+                                  }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
+                                      {lesson.video_url ? <Video size={16} color="var(--primary)" /> : <File size={16} color="var(--text-muted)" />}
+                                      <div>
+                                        <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{idx + 1}. {lesson.title}</div>
+                                        {lesson.video_url && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>📹 Video: {lesson.video_url.substring(0, 40)}...</div>}
+                                        {lesson.duration && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>⏱️ {lesson.duration} phút</div>}
+                                      </div>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                      <button type="button" className="btn btn-ghost btn-sm" onClick={() => openLessonModal(ch.id, lesson)}>Sửa</button>
+                                      <button type="button" className="btn btn-ghost btn-sm" style={{ color: 'var(--error)' }} onClick={() => deleteLesson(lesson.id)}><Trash2 size={14} /></button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontStyle: 'italic', marginBottom: '0.75rem' }}>Chưa có bài học nào</div>
+                            )}
+                            <button type="button" className="btn btn-secondary btn-sm" onClick={() => openLessonModal(ch.id)}>
+                              <Plus size={14} /> Thêm bài học
+                            </button>
                           </div>
-                          <button type="button" className="btn btn-secondary btn-sm" disabled>+ Thêm bài học (Tính năng đang xây dựng)</button>
+
+                          {/* Assignments Section */}
+                          <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
+                            <div style={{ fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text)', fontSize: '0.9rem' }}>📝 Bài tập / Quiz</div>
+                            {ch.assignments && ch.assignments.length > 0 ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                                {ch.assignments.map((assignment, idx) => (
+                                  <div key={assignment.id} style={{ 
+                                    display: 'flex', 
+                                    justifyContent: 'space-between', 
+                                    alignItems: 'center',
+                                    padding: '0.75rem',
+                                    background: 'var(--bg)',
+                                    borderRadius: '4px',
+                                    border: '1px solid var(--border)'
+                                  }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
+                                      {assignment.type === 'quiz' ? 
+                                        <ClipboardList size={16} color="var(--success)" /> : 
+                                        <FileText size={16} color="var(--warning)" />
+                                      }
+                                      <div>
+                                        <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{idx + 1}. {assignment.title}</div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', gap: '1rem' }}>
+                                          <span>{assignment.type === 'quiz' ? '📋 Quiz' : '📄 Essay'}</span>
+                                          <span>🎯 {assignment.total_points} điểm</span>
+                                          {assignment.due_date && <span>📅 {new Date(assignment.due_date).toLocaleDateString('vi-VN')}</span>}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                      <button 
+                                        type="button" 
+                                        className="btn btn-primary btn-sm"
+                                        onClick={() => navigate(`/assignments/${assignment.id}`)}
+                                      >
+                                        Chi tiết
+                                      </button>
+                                      <button type="button" className="btn btn-ghost btn-sm" onClick={() => openAssignmentModal(ch.id, assignment)}>Sửa</button>
+                                      <button type="button" className="btn btn-ghost btn-sm" style={{ color: 'var(--error)' }} onClick={() => deleteAssignment(assignment.id)}><Trash2 size={14} /></button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontStyle: 'italic', marginBottom: '0.75rem' }}>Chưa có bài tập nào</div>
+                            )}
+                            <button type="button" className="btn btn-secondary btn-sm" onClick={() => openAssignmentModal(ch.id)}>
+                              <Plus size={14} /> Thêm bài tập / Quiz
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -243,6 +469,276 @@ const CourseEditor = () => {
           </form>
         </div>
       </div>
+
+      {/* Lesson Modal */}
+      {showLessonModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '1rem'
+        }} onClick={closeLessonModal}>
+          <div className="card" style={{
+            maxWidth: '600px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'auto',
+            padding: '2rem',
+            position: 'relative'
+          }} onClick={(e) => e.stopPropagation()}>
+            <button 
+              type="button"
+              onClick={closeLessonModal}
+              style={{
+                position: 'absolute',
+                top: '1rem',
+                right: '1rem',
+                border: 'none',
+                background: 'transparent',
+                cursor: 'pointer',
+                color: 'var(--text-muted)',
+                padding: '0.5rem'
+              }}
+            >
+              <X size={20} />
+            </button>
+
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1.5rem' }}>
+              {editingLesson ? 'Chỉnh sửa bài học' : 'Thêm bài học mới'}
+            </h2>
+
+            <form onSubmit={saveLessonForm}>
+              <div className="form-group">
+                <label className="form-label">Tiêu đề bài học *</label>
+                <input 
+                  type="text" 
+                  className="form-input" 
+                  required 
+                  value={lessonForm.title}
+                  onChange={e => setLessonForm({...lessonForm, title: e.target.value})}
+                  placeholder="VD: Giới thiệu về React Hooks"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Mô tả / Nội dung</label>
+                <textarea 
+                  className="form-textarea" 
+                  rows="4"
+                  value={lessonForm.content}
+                  onChange={e => setLessonForm({...lessonForm, content: e.target.value})}
+                  placeholder="Mô tả chi tiết nội dung bài học..."
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">
+                  <Video size={16} style={{ display: 'inline', marginRight: '0.5rem' }} />
+                  Link YouTube / Video URL
+                </label>
+                <input 
+                  type="url" 
+                  className="form-input"
+                  value={lessonForm.video_url}
+                  onChange={e => setLessonForm({...lessonForm, video_url: e.target.value})}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                />
+                <small style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                  Dán link YouTube, Vimeo hoặc URL video khác
+                </small>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Tài liệu đính kèm (PDF, Video, ...)</label>
+                <label className="form-file-label">
+                  <Upload size={20} />
+                  <span>{lessonFile ? lessonFile.name : 'Nhấn để chọn file'}</span>
+                  <input 
+                    type="file" 
+                    className="form-file-input"
+                    onChange={e => setLessonFile(e.target.files[0])}
+                  />
+                </label>
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label className="form-label">Thứ tự</label>
+                  <input 
+                    type="number" 
+                    className="form-input"
+                    min="0"
+                    value={lessonForm.lesson_order}
+                    onChange={e => setLessonForm({...lessonForm, lesson_order: e.target.value})}
+                  />
+                </div>
+
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label className="form-label">Thời lượng (phút)</label>
+                  <input 
+                    type="number" 
+                    className="form-input"
+                    min="0"
+                    value={lessonForm.duration}
+                    onChange={e => setLessonForm({...lessonForm, duration: e.target.value})}
+                    placeholder="30"
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                <button type="button" className="btn btn-ghost" onClick={closeLessonModal}>Hủy</button>
+                <button type="submit" className="btn btn-primary" disabled={saving}>
+                  {saving ? 'Đang lưu...' : (editingLesson ? 'Cập nhật' : 'Tạo bài học')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Assignment Modal */}
+      {showAssignmentModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '1rem'
+        }} onClick={closeAssignmentModal}>
+          <div className="card" style={{
+            maxWidth: '600px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'auto',
+            padding: '2rem',
+            position: 'relative'
+          }} onClick={(e) => e.stopPropagation()}>
+            <button 
+              type="button"
+              onClick={closeAssignmentModal}
+              style={{
+                position: 'absolute',
+                top: '1rem',
+                right: '1rem',
+                border: 'none',
+                background: 'transparent',
+                cursor: 'pointer',
+                color: 'var(--text-muted)',
+                padding: '0.5rem'
+              }}
+            >
+              <X size={20} />
+            </button>
+
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1.5rem' }}>
+              {editingAssignment ? 'Chỉnh sửa bài tập' : 'Thêm bài tập / Quiz mới'}
+            </h2>
+
+            <form onSubmit={saveAssignmentForm}>
+              <div className="form-group">
+                <label className="form-label">Tiêu đề bài tập *</label>
+                <input 
+                  type="text" 
+                  className="form-input" 
+                  required 
+                  value={assignmentForm.title}
+                  onChange={e => setAssignmentForm({...assignmentForm, title: e.target.value})}
+                  placeholder="VD: Bài tập về React Hooks"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Mô tả</label>
+                <textarea 
+                  className="form-textarea" 
+                  rows="4"
+                  value={assignmentForm.description}
+                  onChange={e => setAssignmentForm({...assignmentForm, description: e.target.value})}
+                  placeholder="Hướng dẫn và yêu cầu cho bài tập..."
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Loại bài tập</label>
+                <div style={{ display: 'flex', gap: '1.5rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                    <input 
+                      type="radio" 
+                      name="assignment-type"
+                      checked={assignmentForm.type === 'essay'}
+                      onChange={() => setAssignmentForm({...assignmentForm, type: 'essay'})}
+                    />
+                    <FileText size={16} />
+                    <span>Essay / Tự luận</span>
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                    <input 
+                      type="radio" 
+                      name="assignment-type"
+                      checked={assignmentForm.type === 'quiz'}
+                      onChange={() => setAssignmentForm({...assignmentForm, type: 'quiz'})}
+                    />
+                    <ClipboardList size={16} />
+                    <span>Quiz / Trắc nghiệm</span>
+                  </label>
+                </div>
+                <small style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                  {assignmentForm.type === 'quiz' ? 
+                    '💡 Sau khi tạo quiz, bạn có thể thêm câu hỏi trong trang chi tiết bài tập' : 
+                    '💡 Học viên sẽ upload file hoặc nhập văn bản để nộp bài'}
+                </small>
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label className="form-label">
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      Tổng điểm
+                    </span>
+                  </label>
+                  <input 
+                    type="number" 
+                    className="form-input"
+                    min="1"
+                    max="1000"
+                    value={assignmentForm.total_points}
+                    onChange={e => setAssignmentForm({...assignmentForm, total_points: e.target.value})}
+                    placeholder="100"
+                  />
+                </div>
+
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label className="form-label">
+                    <Calendar size={14} style={{ display: 'inline', marginRight: '0.25rem' }} />
+                    Hạn nộp
+                  </label>
+                  <input 
+                    type="datetime-local" 
+                    className="form-input"
+                    value={assignmentForm.due_date}
+                    onChange={e => setAssignmentForm({...assignmentForm, due_date: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                <button type="button" className="btn btn-ghost" onClick={closeAssignmentModal}>Hủy</button>
+                <button type="submit" className="btn btn-primary" disabled={saving}>
+                  {saving ? 'Đang lưu...' : (editingAssignment ? 'Cập nhật' : 'Tạo bài tập')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

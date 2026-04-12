@@ -15,6 +15,7 @@ import Gradebook from './pages/Gradebook';
 import Forum from './pages/Forum';
 import Guide from './pages/Guide';
 import Profile from './pages/Profile';
+import AssignmentDetail from './pages/AssignmentDetail';
 import { useContext } from 'react';
 import { AuthContext } from './contexts/AuthContext';
 
@@ -49,6 +50,9 @@ function App() {
             <Route path="/instructor/dashboard" element={<PrivateRoute><InstructorDashboard /></PrivateRoute>} />
             <Route path="/instructor/course/create" element={<PrivateRoute><CourseEditor /></PrivateRoute>} />
             <Route path="/instructor/course/:id/edit" element={<PrivateRoute><CourseEditor /></PrivateRoute>} />
+
+            {/* Assignment Routes */}
+            <Route path="/assignments/:id" element={<PrivateRoute><AssignmentDetail /></PrivateRoute>} />
 
             <Route path="/courses/:id/gradebook" element={<PrivateRoute><Gradebook /></PrivateRoute>} />
             <Route path="/forum" element={<PrivateRoute><Forum /></PrivateRoute>} />

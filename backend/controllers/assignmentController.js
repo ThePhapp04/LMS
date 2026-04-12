@@ -83,6 +83,32 @@ exports.addQuestion = async (req, res) => {
   }
 };
 
+exports.deleteQuestion = async (req, res) => {
+  try {
+    // Check if user is authorized (instructor/admin who owns the course)
+    const [question] = await db.query(`
+      SELECT aq.*, a.course_id, c.lecturer_id 
+      FROM assignment_questions aq
+      JOIN assignments a ON aq.assignment_id = a.id
+      JOIN courses c ON a.course_id = c.id
+      WHERE aq.id = ?
+    `, [req.params.questionId]);
+    
+    if (question.length === 0) {
+      return res.status(404).json({ message: 'Question not found' });
+    }
+    
+    if (question[0].lecturer_id !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+    
+    await db.query('DELETE FROM assignment_questions WHERE id = ?', [req.params.questionId]);
+    res.json({ message: 'Question deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // --- SUBMISSIONS & GRADING ---
 
 exports.submitAssignment = async (req, res) => {
@@ -126,9 +152,14 @@ exports.submitAssignment = async (req, res) => {
       res.status(201).json({ message: 'Quiz graded successfully', score: final_score, total: assignment.total_points });
     } else {
       // Essay submission
+      let file_url = null;
+      if (req.file) {
+        file_url = `/uploads/${req.file.filename}`;
+      }
+      
       await db.query(
-        'INSERT INTO assignment_submissions (assignment_id, student_id, content, status) VALUES (?, ?, ?, ?)',
-        [assignment_id, student_id, content, 'submitted']
+        'INSERT INTO assignment_submissions (assignment_id, student_id, content, file_url, status) VALUES (?, ?, ?, ?, ?)',
+        [assignment_id, student_id, content, file_url, 'submitted']
       );
       res.status(201).json({ message: 'Essay submitted successfully. Waiting for grading.' });
     }

@@ -160,6 +160,7 @@ async function migrate() {
         answers JSON,
         score INT,
         feedback TEXT,
+        file_url VARCHAR(500),
         status ENUM('submitted', 'graded') DEFAULT 'submitted',
         submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (assignment_id) REFERENCES assignments(id) ON DELETE CASCADE,
@@ -167,6 +168,9 @@ async function migrate() {
       )
     `);
     console.log('  + assignment_submissions table ready.');
+    
+    // Add file_url column if missing (for existing tables)
+    await addColumnIfMissing(conn, 'assignment_submissions', 'file_url', 'VARCHAR(500) NULL');
 
     // lesson_progress table
     await conn.query(`

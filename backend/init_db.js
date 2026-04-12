@@ -174,6 +174,72 @@ async function initializeDB() {
       )
     `);
 
+    // Assignments
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS assignments (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        course_id INT NOT NULL,
+        chapter_id INT NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        type ENUM('quiz', 'essay') NOT NULL DEFAULT 'quiz',
+        total_points INT DEFAULT 100,
+        due_date DATETIME,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+        FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE
+      )
+    `);
+
+    // Assignment Questions (for quizzes)
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS assignment_questions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        assignment_id INT NOT NULL,
+        question_text TEXT NOT NULL,
+        options JSON NOT NULL,
+        correct_option INT NOT NULL,
+        points INT DEFAULT 10,
+        FOREIGN KEY (assignment_id) REFERENCES assignments(id) ON DELETE CASCADE
+      )
+    `);
+
+    // Assignment Submissions
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS assignment_submissions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        assignment_id INT NOT NULL,
+        student_id INT NOT NULL,
+        content TEXT,
+        answers JSON,
+        score INT,
+        feedback TEXT,
+        file_url VARCHAR(500),
+        status ENUM('submitted', 'graded') DEFAULT 'submitted',
+        submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (assignment_id) REFERENCES assignments(id) ON DELETE CASCADE,
+        FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `);
+
+    // Events (for Timetable)
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS events (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        course_id INT NOT NULL,
+        lecturer_id INT NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        start_time DATETIME NOT NULL,
+        end_time DATETIME NOT NULL,
+        event_type ENUM('lecture', 'deadline', 'livestream', 'other') DEFAULT 'lecture',
+        meeting_link VARCHAR(500),
+        status ENUM('upcoming', 'completed', 'cancelled') DEFAULT 'upcoming',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+        FOREIGN KEY (lecturer_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `);
+
     console.log('All tables created/updated successfully!');
   } catch (error) {
     console.error('Error initializing database:', error);
