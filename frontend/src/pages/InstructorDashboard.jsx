@@ -129,6 +129,14 @@ const InstructorDashboard = () => {
                     </td>
                     <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
                       <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                        <Link 
+                          to={`/instructor/course/${course.id}/students`} 
+                          className="btn btn-ghost btn-sm" 
+                          style={{ padding: '0.4rem 0.75rem' }}
+                          title="Xem học viên"
+                        >
+                          <Users size={14} />
+                        </Link>
                         <Link to={`/instructor/course/${course.id}/edit`} className="btn btn-secondary btn-sm" style={{ padding: '0.4rem 0.5rem' }}>
                           <Edit size={14} />
                         </Link>

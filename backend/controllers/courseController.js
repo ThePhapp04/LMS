@@ -139,7 +139,17 @@ exports.updateCourse = async (req, res) => {
         req.params.id
       ]
     );
-    res.json({ message: 'Course updated' });
+    
+    res.json({ 
+      message: 'Course updated',
+      id: req.params.id,
+      title: title || course[0].title,
+      description: description || course[0].description,
+      category: category || course[0].category,
+      thumbnail_url,
+      price: price !== undefined ? price : course[0].price,
+      level: level || course[0].level
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

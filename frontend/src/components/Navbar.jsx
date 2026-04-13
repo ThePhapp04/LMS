@@ -23,6 +23,7 @@ const Navbar = () => {
   const isActive = (path) => location.pathname === path;
 
   const initial = user?.name?.charAt(0)?.toUpperCase() || '?';
+  const avatarUrl = user?.avatar_url ? `http://localhost:5000${user.avatar_url}` : null;
   
   // Determine courses path based on user role
   const coursesPath = user?.role === 'lecturer' ? '/instructor/dashboard' : '/courses';
@@ -179,7 +180,13 @@ const Navbar = () => {
                 onMouseEnter={(e) => e.currentTarget.style.background = 'var(--hover-bg)'}
                 onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
               >
-                <div className="avatar">{initial}</div>
+                <div className="avatar" style={{ overflow: 'hidden' }}>
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    initial
+                  )}
+                </div>
                 <span style={{ color: 'var(--text)', fontSize: '0.875rem' }}>{user.name}</span>
                 <span className="badge badge-primary">{user.role}</span>
                 <ChevronDown size={16} style={{ color: 'var(--text-light)' }} />

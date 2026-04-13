@@ -11,6 +11,8 @@ import Timetable from './pages/Timetable';
 // we'll need to define Instructor Dashboard and Editor soon
 import InstructorDashboard from './pages/InstructorDashboard'; 
 import CourseEditor from './pages/CourseEditor';
+import CourseStudents from './pages/CourseStudents';
+import StudentDetail from './pages/StudentDetail';
 import Gradebook from './pages/Gradebook';
 import Forum from './pages/Forum';
 import Guide from './pages/Guide';
@@ -50,6 +52,8 @@ function App() {
             <Route path="/instructor/dashboard" element={<PrivateRoute><InstructorDashboard /></PrivateRoute>} />
             <Route path="/instructor/course/create" element={<PrivateRoute><CourseEditor /></PrivateRoute>} />
             <Route path="/instructor/course/:id/edit" element={<PrivateRoute><CourseEditor /></PrivateRoute>} />
+            <Route path="/instructor/course/:courseId/students" element={<PrivateRoute><CourseStudents /></PrivateRoute>} />
+            <Route path="/instructor/course/:courseId/student/:studentId" element={<PrivateRoute><StudentDetail /></PrivateRoute>} />
 
             {/* Assignment Routes */}
             <Route path="/assignments/:id" element={<PrivateRoute><AssignmentDetail /></PrivateRoute>} />

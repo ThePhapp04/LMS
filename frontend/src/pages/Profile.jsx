@@ -14,6 +14,7 @@ const Profile = () => {
   const [name, setName] = useState(user?.name || '');
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
+  const [avatarTimestamp, setAvatarTimestamp] = useState(Date.now());
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -26,7 +27,7 @@ const Profile = () => {
   const [error, setError] = useState('');
 
   const initial = user?.name?.charAt(0)?.toUpperCase() || '?';
-  const avatarSrc = avatarPreview || (user?.avatar_url ? `http://localhost:5000${user.avatar_url}` : null);
+  const avatarSrc = avatarPreview || (user?.avatar_url ? `http://localhost:5000${user.avatar_url}?t=${avatarTimestamp}` : null);
 
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
@@ -57,17 +58,17 @@ const Profile = () => {
 
       const res = await api.patch('/auth/me', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
 
-      // Update localStorage + context
-      const stored = JSON.parse(localStorage.getItem('user'));
-      const updated = { ...stored, name: res.data.name, avatar_url: res.data.avatar_url };
-      localStorage.setItem('user', JSON.stringify(updated));
-      if (setUser) setUser(updated);
+      // Update localStorage + context with full response data
+      localStorage.setItem('user', JSON.stringify(res.data));
+      if (setUser) setUser(res.data);
 
       setSuccess(t('profile_save_success'));
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
       setAvatarFile(null);
+      setAvatarPreview(null);
+      if (avatarFile) setAvatarTimestamp(Date.now());
     } catch (err) {
       setError(err.response?.data?.message || 'Cập nhật thất bại / Update failed');
     } finally {

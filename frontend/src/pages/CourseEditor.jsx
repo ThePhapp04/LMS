@@ -23,6 +23,7 @@ const CourseEditor = () => {
     title: '', description: '', category: 'General', price: 0, level: 'Beginner', thumbnail_url: ''
   });
   const [thumbnailFile, setThumbnailFile] = useState(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState(null);
   
   // Curriculum State
   const [chapters, setChapters] = useState([]);
@@ -80,7 +81,10 @@ const CourseEditor = () => {
       if (thumbnailFile) fd.append('thumbnail', thumbnailFile);
 
       if (isEdit) {
-        await api.put(`/courses/${id}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+        const res = await api.put(`/courses/${id}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+        setCourse({ ...course, thumbnail_url: res.data.thumbnail_url });
+        setThumbnailFile(null);
+        setThumbnailPreview(null);
         alert('Đã lưu thông tin khóa học');
       } else {
         const res = await api.post('/courses', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
@@ -91,6 +95,13 @@ const CourseEditor = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleThumbnailChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setThumbnailFile(file);
+    setThumbnailPreview(URL.createObjectURL(file));
   };
 
   // Curriculum Handlers (Simplified representations)
@@ -297,13 +308,17 @@ const CourseEditor = () => {
                 <div className="form-group">
                   <label className="form-label">Hình ảnh Thumbnail</label>
                   <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                    {course.thumbnail_url && !thumbnailFile && (
-                      <img src={`http://localhost:5000${course.thumbnail_url}`} style={{ width: 150, height: 100, objectFit: 'cover', borderRadius: '4px' }} />
+                    {(thumbnailPreview || (course.thumbnail_url && !thumbnailFile)) && (
+                      <img 
+                        src={thumbnailPreview || `http://localhost:5000${course.thumbnail_url}`} 
+                        alt="Thumbnail preview"
+                        style={{ width: 150, height: 100, objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--border)' }} 
+                      />
                     )}
                     <label className="form-file-label" style={{ flex: 1 }}>
                       <Upload size={20} />
                       <span>{thumbnailFile ? thumbnailFile.name : 'Nhấn để chọn ảnh mới'}</span>
-                      <input type="file" className="form-file-input" accept="image/*" onChange={e => setThumbnailFile(e.target.files[0])} />
+                      <input type="file" className="form-file-input" accept="image/*" onChange={handleThumbnailChange} />
                     </label>
                   </div>
                 </div>

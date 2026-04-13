@@ -192,72 +192,17 @@ const CourseLearning = () => {
                     </div>
                   )}
 
-                  {/* PDF Viewer */}
-                  {activeLesson.file_url && activeLesson.file_type === 'pdf' && (
-                    <div style={{ marginBottom: '1.5rem' }}>
-                      <div style={{ 
-                        width: '100%', 
-                        height: '600px', 
-                        border: '1px solid var(--border)', 
-                        borderRadius: '0.5rem',
-                        overflow: 'hidden',
-                        boxShadow: 'var(--shadow-lg)',
-                        background: '#525252'
-                      }}>
-                        <iframe
-                          src={`http://localhost:5000${activeLesson.file_url}`}
-                          style={{ 
-                            width: '100%', 
-                            height: '100%', 
-                            border: 'none' 
-                          }}
-                          title={activeLesson.file_name || 'PDF Document'}
-                        />
-                      </div>
-                      <div style={{ 
-                        marginTop: '0.75rem', 
-                        display: 'flex', 
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: '0.75rem',
-                        background: 'var(--surface)',
-                        borderRadius: '0.25rem',
-                        border: '1px solid var(--border)'
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <FileText size={18} color="var(--warning)" />
-                          <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>
-                            {activeLesson.file_name || 'Tài liệu PDF'}
-                          </span>
-                        </div>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          <a 
-                            href={`http://localhost:5000${activeLesson.file_url}`} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="btn btn-ghost btn-sm"
-                          >
-                            <FileText size={13} /> Mở tab mới
-                          </a>
-                          <a 
-                            href={`http://localhost:5000${activeLesson.file_url}`} 
-                            download 
-                            className="btn btn-secondary btn-sm"
-                          >
-                            <Download size={13} /> Tải xuống
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Other file types (non-PDF documents) */}
-                  {activeLesson.file_url && activeLesson.file_type !== 'video' && activeLesson.file_type !== 'pdf' && (
+                  {activeLesson.file_url && activeLesson.file_type !== 'video' && (
                     <div className="doc-preview">
-                      <div className="doc-icon" style={{ background: '#EDE9FE' }}>📝</div>
+                      <div className="doc-icon" style={{ background: activeLesson.file_type === 'pdf' ? '#FEF3C7' : '#EDE9FE' }}>
+                        {activeLesson.file_type === 'pdf' ? '📄' : '📝'}
+                      </div>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: 600, marginBottom: 4 }}>{activeLesson.file_name || 'Tài liệu'}</div>
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          {activeLesson.file_type === 'pdf' && (
+                            <a href={`http://localhost:5000${activeLesson.file_url}`} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm"><FileText size={13} /> Đọc PDF</a>
+                          )}
                           <a href={`http://localhost:5000${activeLesson.file_url}`} download className="btn btn-secondary btn-sm"><Download size={13} /> Tải xuống</a>
                         </div>
                       </div>

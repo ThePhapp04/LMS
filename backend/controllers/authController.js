@@ -30,6 +30,7 @@ exports.register = async (req, res) => {
       name,
       email,
       role: userRole,
+      avatar_url: null,
       token: generateToken(result.insertId, userRole),
     });
   } catch (error) {
@@ -52,6 +53,7 @@ exports.login = async (req, res) => {
       name: user.name,
       email: user.email,
       role: user.role,
+      avatar_url: user.avatar_url,
       token: generateToken(user.id, user.role),
     });
   } catch (error) {
