@@ -235,60 +235,55 @@ const CourseLearning = () => {
                             />
                           </div>
                         </div>
-                      ) : (['pptx','ppt'].includes(activeLesson.file_type) || /\.(pptx?)$/i.test(activeLesson.file_url)) ? (
-                        <div style={{ marginBottom: '1.5rem' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                            <div style={{ fontWeight: 600, fontSize: '1rem' }}>
-                              📊 {activeLesson.file_name || 'Bài trình chiếu PowerPoint'}
+                      ) : (['pptx','ppt','docx','doc','xlsx','xls'].includes(activeLesson.file_type) || /\.(pptx?|docx?|xlsx?)$/i.test(activeLesson.file_url)) ? (() => {
+                        const fullUrl = assetUrl(activeLesson.file_url);
+                        const isLocal = fullUrl.includes('localhost') || fullUrl.includes('127.0.0.1');
+                        const isPpt = ['pptx','ppt'].includes(activeLesson.file_type) || /\.pptx?$/i.test(activeLesson.file_url);
+                        const isDoc = ['docx','doc'].includes(activeLesson.file_type) || /\.docx?$/i.test(activeLesson.file_url);
+                        const icon = isPpt ? '📊' : isDoc ? '📝' : '📈';
+                        const label = isPpt ? 'Bài trình chiếu' : isDoc ? 'Tài liệu Word' : 'Bảng tính Excel';
+                        const viewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(fullUrl)}&embedded=true`;
+                        return (
+                          <div style={{ marginBottom: '1.5rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                              <div style={{ fontWeight: 600, fontSize: '1rem' }}>
+                                {icon} {activeLesson.file_name || label}
+                              </div>
+                              <a href={fullUrl} download className="btn btn-secondary btn-sm">
+                                <Download size={13} /> Tải xuống
+                              </a>
                             </div>
-                            <a href={assetUrl(activeLesson.file_url)} download className="btn btn-secondary btn-sm">
-                              <Download size={13} /> Tải xuống
-                            </a>
+                            {isLocal ? (
+                              <div className="doc-preview" style={{ background: '#FEF3C7', border: '1px solid #F59E0B', padding: '1.25rem' }}>
+                                <div className="doc-icon" style={{ background: '#FDE68A', fontSize: '1.5rem' }}>{icon}</div>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ fontWeight: 600, marginBottom: 4 }}>Xem trước không khả dụng trên localhost</div>
+                                  <div style={{ fontSize: '0.85rem', color: '#92400E', marginBottom: 8 }}>
+                                    Cần triển khai lên server để xem trực tuyến. Hãy tải xuống để xem trên máy.
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div style={{
+                                width: '100%',
+                                height: '600px',
+                                border: '1px solid var(--border)',
+                                borderRadius: 'var(--radius)',
+                                overflow: 'hidden',
+                                boxShadow: 'var(--shadow-lg)',
+                                background: '#f1f5f9'
+                              }}>
+                                <iframe
+                                  src={viewerUrl}
+                                  style={{ width: '100%', height: '100%', border: 'none' }}
+                                  title={label}
+                                  allowFullScreen
+                                />
+                              </div>
+                            )}
                           </div>
-                          <div style={{
-                            width: '100%',
-                            height: '600px',
-                            border: '1px solid var(--border)',
-                            borderRadius: 'var(--radius)',
-                            overflow: 'hidden',
-                            boxShadow: 'var(--shadow-lg)',
-                            background: '#f1f5f9'
-                          }}>
-                            <iframe
-                              src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(assetUrl(activeLesson.file_url))}`}
-                              style={{ width: '100%', height: '100%', border: 'none' }}
-                              title="PowerPoint Viewer"
-                              allowFullScreen
-                            />
-                          </div>
-                        </div>
-                      ) : (['docx','doc'].includes(activeLesson.file_type) || /\.(docx?)$/i.test(activeLesson.file_url)) ? (
-                        <div style={{ marginBottom: '1.5rem' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                            <div style={{ fontWeight: 600, fontSize: '1rem' }}>
-                              📝 {activeLesson.file_name || 'Tài liệu Word'}
-                            </div>
-                            <a href={assetUrl(activeLesson.file_url)} download className="btn btn-secondary btn-sm">
-                              <Download size={13} /> Tải xuống
-                            </a>
-                          </div>
-                          <div style={{
-                            width: '100%',
-                            height: '600px',
-                            border: '1px solid var(--border)',
-                            borderRadius: 'var(--radius)',
-                            overflow: 'hidden',
-                            boxShadow: 'var(--shadow-lg)',
-                            background: '#f1f5f9'
-                          }}>
-                            <iframe
-                              src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(assetUrl(activeLesson.file_url))}`}
-                              style={{ width: '100%', height: '100%', border: 'none' }}
-                              title="Word Viewer"
-                            />
-                          </div>
-                        </div>
-                      ) : (
+                        );
+                      })() : (
                         <div className="doc-preview">
                           <div className="doc-icon" style={{ background: '#EDE9FE' }}>📝</div>
                           <div style={{ flex: 1 }}>

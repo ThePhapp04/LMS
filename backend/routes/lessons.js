@@ -8,8 +8,7 @@ const { protect, authorize } = require('../middleware/authMiddleware');
 const storage = multer.diskStorage({
   destination(req, file, cb) { cb(null, 'uploads/'); },
   filename(req, file, cb) {
-    const safeName = file.originalname.replace(/[^a-z0-9.]/gi, '_');
-    cb(null, `lesson-${Date.now()}-${safeName}`);
+    cb(null, `lesson-${Date.now()}${path.extname(file.originalname).toLowerCase()}`);
   }
 });
 
