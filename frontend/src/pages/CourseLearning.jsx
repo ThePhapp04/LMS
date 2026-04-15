@@ -40,12 +40,21 @@ const CourseLearning = () => {
 
   useEffect(() => {
     if (activeLesson) {
-      if (activeLesson.item_type !== 'assignment') {
+      if (activeLesson.item_type === 'assignment') {
+        fetchFullAssignment(activeLesson.id);
+      } else {
         fetchNotes();
         fetchComments();
       }
     }
-  }, [activeLesson]);
+  }, [activeLesson?.id, activeLesson?.item_type]);
+
+  const fetchFullAssignment = async (assignmentId) => {
+    try {
+      const res = await api.get(`/assignments/${assignmentId}`);
+      setActiveLesson(prev => ({ ...prev, ...res.data, item_type: 'assignment' }));
+    } catch { }
+  };
 
   const fetchCourseAndProgress = async () => {
     try {
@@ -164,7 +173,7 @@ const CourseLearning = () => {
               {/* Viewers */}
               {activeLesson.item_type === 'assignment' ? (
                 <div className="card" style={{ padding: '1.5rem' }}>
-                  <AssignmentViewer assignment={activeLesson} onSubmissionSuccess={() => setActiveLesson({...activeLesson})} />
+                  <AssignmentViewer assignment={activeLesson} onSubmissionSuccess={() => fetchFullAssignment(activeLesson.id)} />
                 </div>
               ) : (
                 <>
@@ -193,20 +202,44 @@ const CourseLearning = () => {
                   )}
 
                   {activeLesson.file_url && activeLesson.file_type !== 'video' && (
-                    <div className="doc-preview">
-                      <div className="doc-icon" style={{ background: activeLesson.file_type === 'pdf' ? '#FEF3C7' : '#EDE9FE' }}>
-                        {activeLesson.file_type === 'pdf' ? '📄' : '📝'}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 600, marginBottom: 4 }}>{activeLesson.file_name || 'Tài liệu'}</div>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          {activeLesson.file_type === 'pdf' && (
-                            <a href={`http://localhost:5000${activeLesson.file_url}`} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm"><FileText size={13} /> Đọc PDF</a>
-                          )}
-                          <a href={`http://localhost:5000${activeLesson.file_url}`} download className="btn btn-secondary btn-sm"><Download size={13} /> Tải xuống</a>
+                    <>
+                      {activeLesson.file_type === 'pdf' ? (
+                        <div style={{ marginBottom: '1.5rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                            <div style={{ fontWeight: 600, fontSize: '1rem' }}>
+                              📄 {activeLesson.file_name || 'Tài liệu PDF'}
+                            </div>
+                            <a href={`http://localhost:5000${activeLesson.file_url}`} download className="btn btn-secondary btn-sm">
+                              <Download size={13} /> Tải xuống
+                            </a>
+                          </div>
+                          <div style={{ 
+                            width: '100%', 
+                            height: '600px', 
+                            border: '1px solid var(--border)', 
+                            borderRadius: 'var(--radius)',
+                            overflow: 'hidden',
+                            boxShadow: 'var(--shadow-lg)'
+                          }}>
+                            <iframe 
+                              src={`http://localhost:5000${activeLesson.file_url}#view=FitH`}
+                              style={{ width: '100%', height: '100%', border: 'none' }}
+                              title="PDF Viewer"
+                            />
+                          </div>
                         </div>
-                      </div>
-                    </div>
+                      ) : (
+                        <div className="doc-preview">
+                          <div className="doc-icon" style={{ background: '#EDE9FE' }}>📝</div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 600, marginBottom: 4 }}>{activeLesson.file_name || 'Tài liệu'}</div>
+                            <a href={`http://localhost:5000${activeLesson.file_url}`} download className="btn btn-secondary btn-sm">
+                              <Download size={13} /> Tải xuống
+                            </a>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
 
                   {/* Context Tabs */}

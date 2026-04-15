@@ -2,7 +2,7 @@ import React, { useEffect, useState, useContext } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 import { AuthContext } from '../contexts/AuthContext';
-import { ArrowLeft, CheckCircle2, Circle, Award, FileText, Calendar, TrendingUp } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Circle, Award, FileText, Calendar, TrendingUp, Eye } from 'lucide-react';
 
 const StudentDetail = () => {
   const { courseId, studentId } = useParams();
@@ -22,9 +22,12 @@ const StudentDetail = () => {
 
   const fetchStudentProgress = async () => {
     try {
+      console.log('Fetching student progress:', { courseId, studentId });
       const res = await api.get(`/enrollments/course/${courseId}/student/${studentId}`);
+      console.log('Student progress data:', res.data);
       setData(res.data);
     } catch (err) {
+      console.error('Error fetching student progress:', err);
       alert(err.response?.data?.message || 'Lỗi tải dữ liệu');
       navigate(`/instructor/course/${courseId}/students`);
     } finally {
@@ -238,6 +241,7 @@ const StudentDetail = () => {
                   <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '1px solid var(--border)' }}>Điểm đạt được</th>
                   <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '1px solid var(--border)' }}>Trạng thái</th>
                   <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '1px solid var(--border)' }}>Nộp bài</th>
+                  <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '1px solid var(--border)' }}>Xem tất cả</th>
                 </tr>
               </thead>
               <tbody>
@@ -280,6 +284,15 @@ const StudentDetail = () => {
                         <Calendar size={14} />
                         {assignment.submitted_at ? formatDate(assignment.submitted_at) : 'Chưa nộp'}
                       </div>
+                    </td>
+                    <td style={{ padding: '1rem', textAlign: 'center' }}>
+                      <Link
+                        to={`/instructor/assignment/${assignment.assignment_id}/grading`}
+                        className="btn btn-sm btn-ghost"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+                      >
+                        <Eye size={14} /> Xem tất cả
+                      </Link>
                     </td>
                   </tr>
                 ))}

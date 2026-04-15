@@ -13,6 +13,7 @@ import InstructorDashboard from './pages/InstructorDashboard';
 import CourseEditor from './pages/CourseEditor';
 import CourseStudents from './pages/CourseStudents';
 import StudentDetail from './pages/StudentDetail';
+import AssignmentGrading from './pages/AssignmentGrading';
 import Gradebook from './pages/Gradebook';
 import Forum from './pages/Forum';
 import Guide from './pages/Guide';
@@ -54,6 +55,7 @@ function App() {
             <Route path="/instructor/course/:id/edit" element={<PrivateRoute><CourseEditor /></PrivateRoute>} />
             <Route path="/instructor/course/:courseId/students" element={<PrivateRoute><CourseStudents /></PrivateRoute>} />
             <Route path="/instructor/course/:courseId/student/:studentId" element={<PrivateRoute><StudentDetail /></PrivateRoute>} />
+            <Route path="/instructor/assignment/:assignmentId/grading" element={<PrivateRoute><AssignmentGrading /></PrivateRoute>} />
 
             {/* Assignment Routes */}
             <Route path="/assignments/:id" element={<PrivateRoute><AssignmentDetail /></PrivateRoute>} />

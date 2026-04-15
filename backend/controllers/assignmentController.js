@@ -32,7 +32,19 @@ exports.getAssignmentById = async (req, res) => {
     
     const assignment = assignments[0];
     if (assignment.type === 'quiz') {
-      const [questions] = await db.query('SELECT id, question_text, options, points FROM assignment_questions WHERE assignment_id = ?', [assignment.id]);
+      // Check if student already submitted — if so, include correct_option for review
+      let includeAnswer = true;
+      if (req.user.role === 'student') {
+        const [subs] = await db.query(
+          'SELECT id FROM assignment_submissions WHERE assignment_id = ? AND student_id = ? LIMIT 1',
+          [assignment.id, req.user.id]
+        );
+        includeAnswer = subs.length > 0;
+      }
+      const fields = includeAnswer
+        ? 'id, question_text, options, correct_option, points'
+        : 'id, question_text, options, points';
+      const [questions] = await db.query(`SELECT ${fields} FROM assignment_questions WHERE assignment_id = ?`, [assignment.id]);
       assignment.questions = questions.map(q => ({
         ...q,
         options: typeof q.options === 'string' ? JSON.parse(q.options) : q.options
@@ -78,6 +90,47 @@ exports.addQuestion = async (req, res) => {
       [req.params.id, question_text, JSON.stringify(options), correct_option, points || 10]
     );
     res.status(201).json({ id: result.insertId, message: 'Question added' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.updateQuestion = async (req, res) => {
+  const { question_text, options, correct_option, points } = req.body;
+  try {
+    await db.query(
+      'UPDATE assignment_questions SET question_text = ?, options = ?, correct_option = ?, points = ? WHERE id = ?',
+      [question_text, JSON.stringify(options), correct_option, points || 10, req.params.questionId]
+    );
+    res.json({ message: 'Question updated' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.bulkSaveQuestions = async (req, res) => {
+  const { questions } = req.body;
+  const assignment_id = req.params.id;
+  try {
+    // Delete all existing questions for this assignment
+    await db.query('DELETE FROM assignment_questions WHERE assignment_id = ?', [assignment_id]);
+    
+    // Insert all new questions
+    for (const q of questions) {
+      await db.query(
+        'INSERT INTO assignment_questions (assignment_id, question_text, options, correct_option, points) VALUES (?, ?, ?, ?, ?)',
+        [assignment_id, q.question_text, JSON.stringify(q.options), q.correct_option, q.points || 10]
+      );
+    }
+    
+    // Return the newly created questions
+    const [saved] = await db.query('SELECT id, question_text, options, correct_option, points FROM assignment_questions WHERE assignment_id = ?', [assignment_id]);
+    const result = saved.map(q => ({
+      ...q,
+      options: typeof q.options === 'string' ? JSON.parse(q.options) : q.options
+    }));
+    
+    res.json({ message: `${questions.length} questions saved`, questions: result });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -149,7 +202,19 @@ exports.submitAssignment = async (req, res) => {
         [assignment_id, student_id, JSON.stringify(answers), final_score, 'graded']
       );
 
-      res.status(201).json({ message: 'Quiz graded successfully', score: final_score, total: assignment.total_points });
+      // Return per-question results so frontend can show correct/incorrect
+      const questionResults = questions.map(q => ({
+        id: q.id,
+        correct_option: q.correct_option,
+        is_correct: answers && answers[q.id] !== undefined && answers[q.id] == q.correct_option
+      }));
+
+      res.status(201).json({
+        message: 'Quiz graded successfully',
+        score: final_score,
+        total: assignment.total_points,
+        question_results: questionResults
+      });
     } else {
       // Essay submission
       let file_url = null;

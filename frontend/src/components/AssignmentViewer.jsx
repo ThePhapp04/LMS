@@ -1,183 +1,328 @@
 import React, { useState, useContext } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
 import api from '../services/api';
-import { CheckCircle2, AlertCircle } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Clock, Award, ChevronLeft, ChevronRight, Circle } from 'lucide-react';
+
+const optionLabels = ['A', 'B', 'C', 'D', 'E', 'F'];
+const optionColors = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
 const AssignmentViewer = ({ assignment, onSubmissionSuccess }) => {
   const { user } = useContext(AuthContext);
-  const [answers, setAnswers] = useState(assignment.my_submission?.answers || {});
+  const [answers, setAnswers] = useState({});
   const [content, setContent] = useState(assignment.my_submission?.content || '');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [activeQIdx, setActiveQIdx] = useState(0);
+  const [submitted, setSubmitted] = useState(false);
+  const [submitResult, setSubmitResult] = useState(null);
 
   const isQuiz = assignment.type === 'quiz';
   const mySub = assignment.my_submission;
   const isPastDue = assignment.due_date && new Date() > new Date(assignment.due_date);
+  const questions = assignment.questions || [];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isQuiz && Object.keys(answers).length < questions.length) {
+      return setError(`Bạn còn ${questions.length - Object.keys(answers).length} câu chưa trả lời!`);
+    }
     setSubmitting(true);
     setError('');
     try {
       const payload = isQuiz ? { answers } : { content };
       const res = await api.post(`/assignments/${assignment.id}`, payload);
-      alert(res.data.message || 'Submitted successfully!');
+      if (isQuiz) {
+        setSubmitResult(res.data);
+        setSubmitted(true);
+      } else {
+        alert(res.data.message || 'Nộp bài thành công!');
+      }
       if (onSubmissionSuccess) onSubmissionSuccess();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to submit');
+      setError(err.response?.data?.message || 'Nộp bài thất bại');
     } finally {
       setSubmitting(false);
     }
   };
 
+  const answeredCount = Object.keys(answers).length;
+
   return (
     <div style={{ padding: '1rem 0' }}>
-      <div style={{ fontSize: '0.95rem', lineHeight: 1.8, color: 'var(--text)', whiteSpace: 'pre-wrap', marginBottom: '2rem' }}>
-        {assignment.description || 'No description provided.'}
+      {/* Assignment Info Bar */}
+      <div style={{
+        background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '10px',
+        padding: '1rem 1.5rem', marginBottom: '1.5rem',
+        display: 'flex', gap: '2rem', flexWrap: 'wrap', fontSize: '0.9rem'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Award size={16} color="var(--warning)" />
+          <span><strong>Tổng điểm:</strong> {assignment.total_points}</span>
+        </div>
+        {assignment.due_date && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: isPastDue ? 'var(--error)' : 'var(--text)' }}>
+            <Clock size={16} />
+            <span><strong>Hạn nộp:</strong> {new Date(assignment.due_date).toLocaleString('vi-VN')}</span>
+            {isPastDue && <span style={{ color: 'var(--error)', fontSize: '0.8rem' }}>(Đã hết hạn)</span>}
+          </div>
+        )}
+        {isQuiz && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Circle size={16} color="var(--primary)" />
+            <span><strong>{questions.length} câu hỏi</strong></span>
+          </div>
+        )}
       </div>
 
-      <div style={{ background: 'var(--bg-alt)', padding: '1rem', borderRadius: '0.5rem', marginBottom: '2rem', display: 'flex', gap: '1.5rem', fontSize: '0.9rem' }}>
-        <div><strong>Type:</strong> <span style={{ textTransform: 'capitalize' }}>{assignment.type}</span></div>
-        <div><strong>Total Points:</strong> {assignment.total_points}</div>
-        <div><strong>Due:</strong> {assignment.due_date ? new Date(assignment.due_date).toLocaleString() : 'No due date'}</div>
-      </div>
+      {assignment.description && (
+        <div style={{ fontSize: '0.95rem', lineHeight: 1.8, color: 'var(--text)', whiteSpace: 'pre-wrap', marginBottom: '1.5rem' }}>
+          {assignment.description}
+        </div>
+      )}
 
-      {mySub && (
-        <div className={`alert ${mySub.status === 'graded' ? 'alert-success' : 'alert-error'}`} style={{ marginBottom: '2rem' }}>
-          <div>
-            <div style={{ fontWeight: 600 }}>{mySub.status === 'graded' ? `Graded: ${mySub.score} / ${assignment.total_points}` : 'Submitted - Waiting for grade'}</div>
-            {mySub.feedback && <div style={{ marginTop: 4, fontStyle: 'italic' }}>Feedback: {mySub.feedback}</div>}
-            <div style={{ fontSize: '0.8rem', marginTop: 4 }}>Submitted on: {new Date(mySub.submitted_at).toLocaleString()}</div>
+      {/* Already submitted result banner */}
+      {mySub && !submitted && (
+        <div style={{
+          background: mySub.status === 'graded' ? '#dcfce7' : '#fef9c3',
+          border: `1px solid ${mySub.status === 'graded' ? 'var(--success)' : '#ca8a04'}`,
+          borderRadius: '10px', padding: '1rem 1.5rem', marginBottom: '1.5rem'
+        }}>
+          <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '0.25rem' }}>
+            {mySub.status === 'graded'
+              ? `✅ Đã chấm điểm: ${mySub.score} / ${assignment.total_points} điểm`
+              : '⏳ Đã nộp — Chờ chấm điểm'}
+          </div>
+          {mySub.feedback && <div style={{ fontStyle: 'italic', color: 'var(--text-muted)' }}>📝 {mySub.feedback}</div>}
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 4 }}>
+            Nộp lúc: {new Date(mySub.submitted_at).toLocaleString('vi-VN')}
           </div>
         </div>
       )}
 
-      {user.role === 'student' && (
-        <form onSubmit={handleSubmit}>
-          {isQuiz ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              {assignment.questions?.map((q, i) => (
-                <div key={q.id} className="card" style={{ padding: '1.5rem' }}>
-                  <h4 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem' }}>{i + 1}. {q.question_text} <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 400 }}>({q.points} pts)</span></h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    {q.options?.map((opt, optIdx) => (
-                      <label key={optIdx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                        <input type="radio" 
-                          name={`q_${q.id}`} 
-                          value={optIdx}
-                          checked={answers[q.id] == optIdx}
-                          onChange={() => setAnswers(prev => ({ ...prev, [q.id]: optIdx }))}
-                        />
-                        {opt}
-                      </label>
-                    ))}
+      {/* ===== POST-SUBMIT RESULT (Quiz) ===== */}
+      {submitted && submitResult && (
+        <div style={{ marginBottom: '2rem' }}>
+          <div className="card" style={{
+            padding: '2rem', textAlign: 'center', marginBottom: '1.5rem',
+            background: 'linear-gradient(135deg, #dcfce7, #bbf7d0)',
+            border: '1px solid var(--success)'
+          }}>
+            <CheckCircle2 size={48} color="var(--success)" style={{ marginBottom: '0.75rem' }} />
+            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--success)' }}>
+              {submitResult.score} / {submitResult.total} điểm
+            </div>
+            <div style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+              Đúng {submitResult.question_results?.filter(r => r.is_correct).length ?? 0} / {questions.length} câu
+            </div>
+          </div>
+
+          {/* Show each question with result */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {questions.map((q, i) => {
+              const chosen = answers[q.id];
+              // Use server-returned results for accuracy, fallback to q.correct_option if available
+              const qResult = submitResult.question_results?.find(r => r.id === q.id);
+              const correctOption = qResult?.correct_option ?? q.correct_option;
+              const isCorrect = qResult ? qResult.is_correct : (chosen !== undefined && chosen === correctOption);
+              return (
+                <div key={q.id} className="card" style={{
+                  padding: '1.25rem',
+                  background: isCorrect ? '#f0fdf4' : '#fff7f7',
+                  border: `2px solid ${isCorrect ? 'var(--success)' : 'var(--error)'}`,
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                    <div style={{ fontWeight: 700 }}>Câu {i + 1}. {q.question_text}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
+                      {isCorrect
+                        ? <><CheckCircle2 size={16} color="var(--success)" /><span style={{ color: 'var(--success)', fontSize: '0.85rem' }}>+{q.points}đ</span></>
+                        : <><AlertCircle size={16} color="var(--error)" /><span style={{ color: 'var(--error)', fontSize: '0.85rem' }}>0đ</span></>}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    {q.options.map((opt, oIdx) => {
+                      const isChosen = chosen === oIdx;
+                      const isAnsCorrect = correctOption !== undefined && oIdx === correctOption;
+                      let bg = 'transparent'; let border = '1px solid var(--border)';
+                      if (isAnsCorrect && isChosen) { bg = '#dcfce7'; border = '2px solid var(--success)'; }
+                      else if (isAnsCorrect) { bg = '#dcfce7'; border = '1px solid var(--success)'; }
+                      else if (isChosen) { bg = '#fee2e2'; border = '1px solid var(--error)'; }
+                      return (
+                        <div key={oIdx} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 0.75rem', borderRadius: '8px', background: bg, border }}>
+                          <span style={{ width: 24, height: 24, borderRadius: '50%', background: isAnsCorrect ? 'var(--success)' : isChosen ? 'var(--error)' : optionColors[oIdx], color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 700, flexShrink: 0 }}>
+                            {optionLabels[oIdx]}
+                          </span>
+                          <span style={{ flex: 1 }}>{opt}</span>
+                          {isAnsCorrect && <CheckCircle2 size={14} color="var(--success)" />}
+                          {isChosen && !isAnsCorrect && <AlertCircle size={14} color="var(--error)" />}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-              ))}
-            </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ===== STUDENT QUIZ FORM ===== */}
+      {user.role === 'student' && !submitted && (
+        <form onSubmit={handleSubmit}>
+          {isQuiz ? (
+            <>
+              {/* Progress bar */}
+              <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                  <span>Tiến độ trả lời</span>
+                  <span>{answeredCount} / {questions.length} câu</span>
+                </div>
+                <div style={{ height: 6, background: 'var(--border)', borderRadius: 99 }}>
+                  <div style={{ height: '100%', width: `${questions.length > 0 ? (answeredCount / questions.length) * 100 : 0}%`, background: 'var(--success)', borderRadius: 99, transition: 'width 0.3s' }} />
+                </div>
+                {/* Question pills */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.75rem' }}>
+                  {questions.map((q, i) => (
+                    <button
+                      type="button" key={q.id}
+                      onClick={() => setActiveQIdx(i)}
+                      style={{
+                        width: 36, height: 36, borderRadius: '50%', border: 'none',
+                        background: answers[q.id] !== undefined ? 'var(--success)' : activeQIdx === i ? 'var(--primary)' : 'var(--border)',
+                        color: answers[q.id] !== undefined || activeQIdx === i ? '#fff' : 'var(--text)',
+                        fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.15s'
+                      }}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Active Question */}
+              {questions[activeQIdx] && (() => {
+                const q = questions[activeQIdx];
+                return (
+                  <div className="card" style={{ padding: '1.75rem', marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+                      <h4 style={{ fontSize: '1.1rem', fontWeight: 700, flex: 1 }}>
+                        Câu {activeQIdx + 1}. {q.question_text}
+                      </h4>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', flexShrink: 0, marginLeft: '1rem' }}>{q.points} điểm</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                      {q.options?.map((opt, oIdx) => {
+                        const isChosen = answers[q.id] === oIdx;
+                        return (
+                          <label key={oIdx} style={{
+                            display: 'flex', alignItems: 'center', gap: '0.75rem',
+                            padding: '0.85rem 1.1rem', borderRadius: '10px', cursor: 'pointer',
+                            background: isChosen ? 'var(--primary-light)' : 'var(--bg)',
+                            border: isChosen ? '2px solid var(--primary)' : '1px solid var(--border)',
+                            transition: 'all 0.15s'
+                          }}>
+                            <div style={{
+                              width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                              background: isChosen ? 'var(--primary)' : optionColors[oIdx],
+                              color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontWeight: 800, fontSize: '0.85rem'
+                            }}>
+                              {optionLabels[oIdx]}
+                            </div>
+                            <span style={{ flex: 1, fontSize: '1rem' }}>{opt}</span>
+                            <input
+                              type="radio" name={`q_${q.id}`} value={oIdx}
+                              checked={isChosen}
+                              onChange={() => setAnswers(prev => ({ ...prev, [q.id]: oIdx }))}
+                              style={{ display: 'none' }}
+                            />
+                            {isChosen && <CheckCircle2 size={18} color="var(--primary)" />}
+                          </label>
+                        );
+                      })}
+                    </div>
+
+                    {/* Prev / Next navigation */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' }}>
+                      <button type="button" className="btn btn-ghost btn-sm" disabled={activeQIdx === 0} onClick={() => setActiveQIdx(activeQIdx - 1)}>
+                        <ChevronLeft size={16} /> Câu trước
+                      </button>
+                      {activeQIdx < questions.length - 1 ? (
+                        <button type="button" className="btn btn-primary btn-sm" onClick={() => setActiveQIdx(activeQIdx + 1)}>
+                          Câu tiếp <ChevronRight size={16} />
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: '0.85rem', color: 'var(--success)', fontWeight: 600 }}>Câu cuối cùng 🎉</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+            </>
           ) : (
             <div className="form-group">
-              <label className="form-label">Your Essay Submission</label>
-              <textarea 
-                className="form-textarea" 
-                rows="8" 
-                value={content} 
-                onChange={e => setContent(e.target.value)} 
-                placeholder="Write your answer here..."
+              <label className="form-label">Bài làm của bạn</label>
+              <textarea
+                className="form-textarea"
+                rows="10"
+                value={content}
+                onChange={e => setContent(e.target.value)}
+                placeholder="Nhập bài làm của bạn tại đây..."
                 required
               />
             </div>
           )}
 
-          {error && <div className="alert alert-error" style={{ marginTop: '1rem' }}>{error}</div>}
+          {error && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--error)', padding: '0.75rem 1rem', background: '#fee2e2', borderRadius: '8px', marginTop: '1rem' }}>
+              <AlertCircle size={16} /> {error}
+            </div>
+          )}
 
-          <div style={{ marginTop: '2rem' }}>
-            <button type="submit" className="btn btn-primary" disabled={submitting || isPastDue}>
-              {submitting ? 'Submitting...' : 'Submit Assignment'}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '1.5rem' }}>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={submitting || isPastDue}
+              style={{ minWidth: '140px' }}
+            >
+              {submitting ? 'Đang nộp...' : isQuiz ? `Nộp bài (${answeredCount}/${questions.length})` : 'Nộp bài'}
             </button>
-            {isPastDue && <span style={{ marginLeft: '1rem', color: 'var(--danger)', fontSize: '0.85rem' }}><AlertCircle size={14} style={{ verticalAlign: 'middle' }}/> Past Due</span>}
+            {isPastDue && (
+              <span style={{ color: 'var(--error)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <AlertCircle size={14} /> Đã hết hạn nộp
+              </span>
+            )}
           </div>
         </form>
       )}
 
+      {/* ===== LECTURER VIEW ===== */}
       {user.role === 'lecturer' && (
-        <div>
-          {isQuiz && (
-            <div className="card" style={{ padding: '1.5rem', marginBottom: '2rem' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem' }}>Quiz Questions</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
-                {assignment.questions?.length > 0 ? (
-                  assignment.questions.map((q, i) => (
-                    <div key={q.id} style={{ padding: '1rem', background: 'var(--bg-alt)', borderRadius: '0.5rem' }}>
-                      <div style={{ fontWeight: 600 }}>{i + 1}. {q.question_text} <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>({q.points} pts)</span></div>
-                      <ul style={{ margin: '0.5rem 0 0 1.5rem', padding: 0 }}>
-                        {q.options?.map((opt, oIdx) => (
-                          <li key={oIdx} style={{ color: 'var(--text-muted)', fontWeight: q.correct_option === oIdx ? 600 : 400, color: q.correct_option === oIdx ? 'var(--success)' : 'inherit' }}>
-                            {opt} {q.correct_option === oIdx && '✓'}
-                          </li>
-                        ))}
-                      </ul>
+        <div className="card" style={{ padding: '1.5rem' }}>
+          {isQuiz && questions.length > 0 ? (
+            <>
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem' }}>Danh sách câu hỏi ({questions.length} câu)</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {questions.map((q, i) => (
+                  <div key={q.id} style={{ padding: '0.75rem 1rem', background: 'var(--bg)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                    <div style={{ fontWeight: 600, marginBottom: '0.5rem' }}>{i + 1}. {q.question_text} <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>({q.points}đ)</span></div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                      {q.options?.map((opt, oIdx) => (
+                        <div key={oIdx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: oIdx === q.correct_option ? 'var(--success)' : 'var(--text-muted)', fontWeight: oIdx === q.correct_option ? 700 : 400 }}>
+                          {oIdx === q.correct_option ? <CheckCircle2 size={14} color="var(--success)" /> : <Circle size={14} />}
+                          {opt}
+                        </div>
+                      ))}
                     </div>
-                  ))
-                ) : (
-                  <div style={{ color: 'var(--text-muted)' }}>No questions added yet.</div>
-                )}
+                  </div>
+                ))}
               </div>
-
-              <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
-                <h4 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem' }}>Add New Question</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                   <input type="text" className="form-input" id="new-q-text" placeholder="Question Text" />
-                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                     <input type="text" className="form-input" id="new-q-opt0" placeholder="Option 1" />
-                     <input type="text" className="form-input" id="new-q-opt1" placeholder="Option 2" />
-                     <input type="text" className="form-input" id="new-q-opt2" placeholder="Option 3 (Optional)" />
-                     <input type="text" className="form-input" id="new-q-opt3" placeholder="Option 4 (Optional)" />
-                   </div>
-                   <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                     <div style={{ flex: 1 }}>
-                       <label className="form-label" style={{ marginBottom: 4 }}>Correct Option (1-4)</label>
-                       <select className="form-input" id="new-q-correct">
-                         <option value="0">Option 1</option>
-                         <option value="1">Option 2</option>
-                         <option value="2">Option 3</option>
-                         <option value="3">Option 4</option>
-                       </select>
-                     </div>
-                     <div style={{ width: '100px' }}>
-                       <label className="form-label" style={{ marginBottom: 4 }}>Points</label>
-                       <input type="number" className="form-input" id="new-q-points" defaultValue="10" min="1" />
-                     </div>
-                   </div>
-                   <button className="btn btn-secondary" onClick={async () => {
-                     const text = document.getElementById('new-q-text').value;
-                     const opts = [
-                       document.getElementById('new-q-opt0').value,
-                       document.getElementById('new-q-opt1').value,
-                       document.getElementById('new-q-opt2').value,
-                       document.getElementById('new-q-opt3').value
-                     ].filter(Boolean);
-                     const correct = parseInt(document.getElementById('new-q-correct').value);
-                     const pts = parseInt(document.getElementById('new-q-points').value);
-                     
-                     if (!text || opts.length < 2) return alert('Enter question and at least 2 options.');
-                     if (correct >= opts.length) return alert('Correct option index out of bounds.');
-
-                     try {
-                       await api.post(`/assignments/${assignment.id}/questions`, {
-                         question_text: text, options: opts, correct_option: correct, points: pts
-                       });
-                       if (onSubmissionSuccess) onSubmissionSuccess(); // reload assignment
-                     } catch (err) { alert(err.response?.data?.message || 'Failed to add question'); }
-                   }}>Add Question</button>
-                </div>
-              </div>
-            </div>
+            </>
+          ) : (
+            <p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>
+              {isQuiz ? 'Chưa có câu hỏi nào. Vào Course Editor để soạn câu hỏi.' : 'Quản lý bài nộp tại trang Gradebook.'}
+            </p>
           )}
-
-          <div className="card" style={{ padding: '1.5rem', textAlign: 'center' }}>
-            <p style={{ color: 'var(--text-muted)' }}>Manage submissions and grades in the <strong>Course Gradebook</strong>.</p>
-          </div>
         </div>
       )}
     </div>

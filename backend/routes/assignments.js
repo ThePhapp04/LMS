@@ -29,6 +29,12 @@ router.route('/:id')
 // Add Question to a Quiz assignment
 router.post('/:id/questions', auth, authorize('lecturer', 'admin'), assignmentController.addQuestion);
 
+// Bulk save all questions for a Quiz assignment
+router.put('/:id/questions/bulk', auth, authorize('lecturer', 'admin'), assignmentController.bulkSaveQuestions);
+
+// Update a question
+router.put('/questions/:questionId', auth, authorize('lecturer', 'admin'), assignmentController.updateQuestion);
+
 // Delete a question from a Quiz assignment
 router.delete('/questions/:questionId', auth, authorize('lecturer', 'admin'), assignmentController.deleteQuestion);
 

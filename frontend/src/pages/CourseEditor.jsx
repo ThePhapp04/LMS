@@ -2,7 +2,7 @@ import React, { useEffect, useState, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { AuthContext } from '../contexts/AuthContext';
-import { FileEdit, List, DollarSign, CheckCircle, ArrowLeft, Upload, Plus, Trash2, X, Video, File, FileText, ClipboardList, Calendar } from 'lucide-react';
+import { FileEdit, List, DollarSign, CheckCircle, ArrowLeft, Upload, Plus, Trash2, X, Video, File, FileText, ClipboardList, Calendar, Copy, ChevronLeft, ChevronRight, Eye, Save, CheckCircle2, AlertCircle } from 'lucide-react';
 
 const CATEGORIES = ['General', 'Technology', 'Business', 'Design', 'Science', 'Language', 'Arts'];
 const LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
@@ -43,6 +43,16 @@ const CourseEditor = () => {
   const [assignmentForm, setAssignmentForm] = useState({
     title: '', description: '', type: 'essay', total_points: 100, due_date: ''
   });
+
+  // Quiz Builder State
+  const [showQuizBuilder, setShowQuizBuilder] = useState(false);
+  const [quizBuilderAssignment, setQuizBuilderAssignment] = useState(null);
+  const [quizQuestions, setQuizQuestions] = useState([]);
+  const [activeQuestionIdx, setActiveQuestionIdx] = useState(0);
+  const [quizSaving, setQuizSaving] = useState(false);
+  const [quizPreview, setQuizPreview] = useState(false);
+  const [previewAnswers, setPreviewAnswers] = useState({});
+  const [previewSubmitted, setPreviewSubmitted] = useState(false);
 
   useEffect(() => {
     if (user && user.role !== 'lecturer' && user.role !== 'admin') {
@@ -251,6 +261,122 @@ const CourseEditor = () => {
     } catch {}
   };
 
+  // Quiz Builder Handlers
+  const openQuizBuilder = async (assignment) => {
+    try {
+      const res = await api.get(`/assignments/${assignment.id}`);
+      setQuizBuilderAssignment(res.data);
+      const existingQs = (res.data.questions || []).map((q, i) => ({
+        id: q.id,
+        question_text: q.question_text,
+        options: q.options || ['', ''],
+        correct_option: q.correct_option,
+        points: q.points || 10
+      }));
+      if (existingQs.length === 0) {
+        existingQs.push({ question_text: '', options: ['', '', '', ''], correct_option: 0, points: 10 });
+      }
+      setQuizQuestions(existingQs);
+      setActiveQuestionIdx(0);
+      setQuizPreview(false);
+      setPreviewAnswers({});
+      setPreviewSubmitted(false);
+      setShowQuizBuilder(true);
+    } catch (err) {
+      alert('Không thể tải quiz');
+    }
+  };
+
+  const closeQuizBuilder = () => {
+    setShowQuizBuilder(false);
+    setQuizBuilderAssignment(null);
+    setQuizQuestions([]);
+    setActiveQuestionIdx(0);
+    setQuizPreview(false);
+  };
+
+  const addQuizQuestion = () => {
+    const newQ = { question_text: '', options: ['', '', '', ''], correct_option: 0, points: 10 };
+    setQuizQuestions([...quizQuestions, newQ]);
+    setActiveQuestionIdx(quizQuestions.length);
+  };
+
+  const duplicateQuestion = (idx) => {
+    const q = quizQuestions[idx];
+    const copy = { ...q, id: undefined, question_text: q.question_text + ' (copy)', options: [...q.options] };
+    const updated = [...quizQuestions];
+    updated.splice(idx + 1, 0, copy);
+    setQuizQuestions(updated);
+    setActiveQuestionIdx(idx + 1);
+  };
+
+  const removeQuizQuestion = (idx) => {
+    if (quizQuestions.length <= 1) return alert('Quiz phải có ít nhất 1 câu hỏi');
+    const updated = quizQuestions.filter((_, i) => i !== idx);
+    setQuizQuestions(updated);
+    if (activeQuestionIdx >= updated.length) setActiveQuestionIdx(updated.length - 1);
+  };
+
+  const updateQuizQuestion = (idx, field, value) => {
+    const updated = [...quizQuestions];
+    updated[idx] = { ...updated[idx], [field]: value };
+    setQuizQuestions(updated);
+  };
+
+  const updateOption = (qIdx, optIdx, value) => {
+    const updated = [...quizQuestions];
+    const opts = [...updated[qIdx].options];
+    opts[optIdx] = value;
+    updated[qIdx] = { ...updated[qIdx], options: opts };
+    setQuizQuestions(updated);
+  };
+
+  const addOption = (qIdx) => {
+    const updated = [...quizQuestions];
+    if (updated[qIdx].options.length >= 6) return;
+    updated[qIdx] = { ...updated[qIdx], options: [...updated[qIdx].options, ''] };
+    setQuizQuestions(updated);
+  };
+
+  const removeOption = (qIdx, optIdx) => {
+    const updated = [...quizQuestions];
+    if (updated[qIdx].options.length <= 2) return;
+    const opts = updated[qIdx].options.filter((_, i) => i !== optIdx);
+    let correct = updated[qIdx].correct_option;
+    if (correct >= opts.length) correct = 0;
+    else if (correct > optIdx) correct--;
+    updated[qIdx] = { ...updated[qIdx], options: opts, correct_option: correct };
+    setQuizQuestions(updated);
+  };
+
+  const saveQuizQuestions = async () => {
+    // Validate
+    for (let i = 0; i < quizQuestions.length; i++) {
+      const q = quizQuestions[i];
+      if (!q.question_text.trim()) return alert(`Câu ${i + 1}: Chưa nhập nội dung câu hỏi`);
+      const filledOpts = q.options.filter(o => o.trim());
+      if (filledOpts.length < 2) return alert(`Câu ${i + 1}: Cần ít nhất 2 đáp án`);
+      if (q.correct_option >= filledOpts.length) return alert(`Câu ${i + 1}: Đáp án đúng không hợp lệ`);
+    }
+
+    setQuizSaving(true);
+    try {
+      const cleaned = quizQuestions.map(q => ({
+        question_text: q.question_text,
+        options: q.options.filter(o => o.trim()),
+        correct_option: q.correct_option,
+        points: q.points || 10
+      }));
+      await api.put(`/assignments/${quizBuilderAssignment.id}/questions/bulk`, { questions: cleaned });
+      alert(`Đã lưu ${cleaned.length} câu hỏi thành công!`);
+      fetchCourse();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Lỗi lưu câu hỏi');
+    } finally {
+      setQuizSaving(false);
+    }
+  };
+
   if (loading) return <div className="loading-wrapper"><div className="spinner" /></div>;
 
   return (
@@ -442,6 +568,15 @@ const CourseEditor = () => {
                                       </div>
                                     </div>
                                     <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                      {assignment.type === 'quiz' && (
+                                        <button 
+                                          type="button" 
+                                          className="btn btn-success btn-sm"
+                                          onClick={() => openQuizBuilder(assignment)}
+                                        >
+                                          <ClipboardList size={14} /> Soạn câu hỏi
+                                        </button>
+                                      )}
                                       <button 
                                         type="button" 
                                         className="btn btn-primary btn-sm"
@@ -575,6 +710,7 @@ const CourseEditor = () => {
                   <input 
                     type="file" 
                     className="form-file-input"
+                    accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.xlsx,.xls,.mp4,.webm,.mov,.avi,.mkv,.mp3,.wav,.jpg,.jpeg,.png,.gif,.webp,.svg"
                     onChange={e => setLessonFile(e.target.files[0])}
                   />
                 </label>
@@ -707,7 +843,7 @@ const CourseEditor = () => {
                 </div>
                 <small style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                   {assignmentForm.type === 'quiz' ? 
-                    '💡 Sau khi tạo quiz, bạn có thể thêm câu hỏi trong trang chi tiết bài tập' : 
+                    '💡 Sau khi tạo quiz, nhấn "Soạn câu hỏi" để mở trình soạn câu hỏi trắc nghiệm' : 
                     '💡 Học viên sẽ upload file hoặc nhập văn bản để nộp bài'}
                 </small>
               </div>
@@ -752,6 +888,338 @@ const CourseEditor = () => {
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {/* ===== QUIZ BUILDER (iSpring-like) ===== */}
+      {showQuizBuilder && quizBuilderAssignment && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'var(--bg)', zIndex: 2000, display: 'flex', flexDirection: 'column',
+          overflow: 'hidden'
+        }}>
+          {/* Top Toolbar */}
+          <div style={{
+            background: '#1e293b', color: '#fff', padding: '0.75rem 1.5rem',
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <button className="btn btn-ghost" style={{ color: '#94a3b8', padding: '0.25rem' }} onClick={closeQuizBuilder}>
+                <ArrowLeft size={18} />
+              </button>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>{quizBuilderAssignment.title}</div>
+                <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                  {quizQuestions.length} câu hỏi · {quizQuestions.reduce((s, q) => s + (q.points || 0), 0)} điểm tổng
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+              <button
+                className={`btn btn-sm ${quizPreview ? 'btn-warning' : 'btn-ghost'}`}
+                style={{ color: quizPreview ? undefined : '#cbd5e1' }}
+                onClick={() => { setQuizPreview(!quizPreview); setPreviewAnswers({}); setPreviewSubmitted(false); }}
+              >
+                <Eye size={15} /> {quizPreview ? 'Thoát xem thử' : 'Xem thử'}
+              </button>
+              <button className="btn btn-success btn-sm" onClick={saveQuizQuestions} disabled={quizSaving}>
+                <Save size={15} /> {quizSaving ? 'Đang lưu...' : 'Lưu tất cả'}
+              </button>
+              <button className="btn btn-ghost btn-sm" style={{ color: '#94a3b8' }} onClick={closeQuizBuilder}>
+                <X size={18} />
+              </button>
+            </div>
+          </div>
+
+          {quizPreview ? (
+            /* ===== PREVIEW MODE ===== */
+            <div style={{ flex: 1, overflowY: 'auto', padding: '2rem' }}>
+              <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+                <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+                  <h2 style={{ fontSize: '1.6rem', fontWeight: 800 }}>{quizBuilderAssignment.title}</h2>
+                  <p style={{ color: 'var(--text-muted)' }}>{quizQuestions.length} câu hỏi · Tổng điểm: {quizQuestions.reduce((s, q) => s + (q.points || 0), 0)}</p>
+                </div>
+                {quizQuestions.map((q, i) => {
+                  const filledOpts = q.options.filter(o => o.trim());
+                  return (
+                    <div key={i} className="card" style={{ padding: '1.5rem', marginBottom: '1rem', border: previewSubmitted ? (previewAnswers[i] === q.correct_option ? '2px solid var(--success)' : previewAnswers[i] !== undefined ? '2px solid var(--error)' : '2px solid var(--border)') : '1px solid var(--border)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                        <h4 style={{ fontWeight: 700, fontSize: '1rem' }}>Câu {i + 1}. {q.question_text || '(Chưa nhập câu hỏi)'}</h4>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', flexShrink: 0 }}>{q.points} điểm</span>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        {filledOpts.map((opt, oIdx) => {
+                          const isSelected = previewAnswers[i] === oIdx;
+                          const isCorrect = oIdx === q.correct_option;
+                          let bg = 'var(--bg)';
+                          let border = '1px solid var(--border)';
+                          if (previewSubmitted && isCorrect) { bg = '#dcfce7'; border = '2px solid var(--success)'; }
+                          else if (previewSubmitted && isSelected && !isCorrect) { bg = '#fee2e2'; border = '2px solid var(--error)'; }
+                          else if (isSelected) { bg = 'var(--primary-light)'; border = '2px solid var(--primary)'; }
+                          return (
+                            <label key={oIdx} style={{
+                              display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem',
+                              borderRadius: '8px', cursor: previewSubmitted ? 'default' : 'pointer',
+                              background: bg, border, transition: 'all 0.15s'
+                            }} onClick={() => { if (!previewSubmitted) setPreviewAnswers({ ...previewAnswers, [i]: oIdx }); }}>
+                              <div style={{
+                                width: 22, height: 22, borderRadius: '50%', border: '2px solid var(--border)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                                background: isSelected ? 'var(--primary)' : '#fff'
+                              }}>
+                                {isSelected && <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#fff' }} />}
+                              </div>
+                              <span style={{ fontSize: '0.95rem' }}>{opt}</span>
+                              {previewSubmitted && isCorrect && <CheckCircle2 size={16} color="var(--success)" style={{ marginLeft: 'auto' }} />}
+                              {previewSubmitted && isSelected && !isCorrect && <AlertCircle size={16} color="var(--error)" style={{ marginLeft: 'auto' }} />}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+                <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+                  {!previewSubmitted ? (
+                    <button className="btn btn-primary btn-lg" onClick={() => setPreviewSubmitted(true)}>
+                      Nộp bài
+                    </button>
+                  ) : (
+                    <div className="card" style={{ padding: '1.5rem', textAlign: 'center' }}>
+                      <div style={{ fontSize: '1.3rem', fontWeight: 800, marginBottom: '0.5rem' }}>
+                        Kết quả: {quizQuestions.filter((q, i) => previewAnswers[i] === q.correct_option).length} / {quizQuestions.length} câu đúng
+                      </div>
+                      <div style={{ color: 'var(--text-muted)' }}>
+                        Điểm: {quizQuestions.reduce((s, q, i) => s + (previewAnswers[i] === q.correct_option ? q.points : 0), 0)} / {quizQuestions.reduce((s, q) => s + q.points, 0)}
+                      </div>
+                      <button className="btn btn-secondary" style={{ marginTop: '1rem' }} onClick={() => { setPreviewAnswers({}); setPreviewSubmitted(false); }}>
+                        Làm lại
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* ===== EDITOR MODE ===== */
+            <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+              {/* Left Panel: Question List */}
+              <div style={{
+                width: '280px', background: 'var(--surface)', borderRight: '1px solid var(--border)',
+                display: 'flex', flexDirection: 'column', flexShrink: 0
+              }}>
+                <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>Danh sách câu hỏi</span>
+                  <button className="btn btn-primary btn-sm" onClick={addQuizQuestion} style={{ padding: '0.25rem 0.5rem' }}>
+                    <Plus size={14} />
+                  </button>
+                </div>
+                <div style={{ flex: 1, overflowY: 'auto', padding: '0.5rem' }}>
+                  {quizQuestions.map((q, i) => {
+                    const hasContent = q.question_text.trim();
+                    const filledOpts = q.options.filter(o => o.trim()).length;
+                    const isValid = hasContent && filledOpts >= 2;
+                    return (
+                      <div
+                        key={i}
+                        onClick={() => setActiveQuestionIdx(i)}
+                        style={{
+                          display: 'flex', alignItems: 'flex-start', gap: '0.5rem',
+                          padding: '0.75rem', marginBottom: '4px', borderRadius: '8px', cursor: 'pointer',
+                          background: activeQuestionIdx === i ? 'var(--primary-light)' : 'transparent',
+                          border: activeQuestionIdx === i ? '1px solid var(--primary)' : '1px solid transparent',
+                          transition: 'all 0.15s'
+                        }}
+                      >
+                        <div style={{
+                          width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                          background: isValid ? 'var(--success)' : 'var(--border)',
+                          color: isValid ? '#fff' : 'var(--text-muted)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '0.8rem', fontWeight: 700
+                        }}>
+                          {i + 1}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{
+                            fontSize: '0.85rem', fontWeight: 600,
+                            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                            color: activeQuestionIdx === i ? 'var(--primary-dark)' : 'var(--text)'
+                          }}>
+                            {q.question_text || 'Câu hỏi mới...'}
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                            {filledOpts} đáp án · {q.points} đ
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* Bottom actions */}
+                <div style={{ padding: '0.75rem', borderTop: '1px solid var(--border)' }}>
+                  <button className="btn btn-secondary btn-sm" style={{ width: '100%' }} onClick={addQuizQuestion}>
+                    <Plus size={14} /> Thêm câu hỏi
+                  </button>
+                </div>
+              </div>
+
+              {/* Right Panel: Question Editor */}
+              <div style={{ flex: 1, overflowY: 'auto', padding: '2rem' }}>
+                {quizQuestions[activeQuestionIdx] && (() => {
+                  const q = quizQuestions[activeQuestionIdx];
+                  const qIdx = activeQuestionIdx;
+                  const optionLabels = ['A', 'B', 'C', 'D', 'E', 'F'];
+                  const optionColors = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+
+                  return (
+                    <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+                      {/* Question Navigation */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <button className="btn btn-ghost btn-sm" disabled={qIdx === 0} onClick={() => setActiveQuestionIdx(qIdx - 1)}>
+                            <ChevronLeft size={16} />
+                          </button>
+                          <span style={{ fontWeight: 800, fontSize: '1.1rem' }}>
+                            Câu {qIdx + 1} / {quizQuestions.length}
+                          </span>
+                          <button className="btn btn-ghost btn-sm" disabled={qIdx === quizQuestions.length - 1} onClick={() => setActiveQuestionIdx(qIdx + 1)}>
+                            <ChevronRight size={16} />
+                          </button>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button className="btn btn-ghost btn-sm" title="Nhân đôi" onClick={() => duplicateQuestion(qIdx)}>
+                            <Copy size={14} /> Nhân đôi
+                          </button>
+                          <button className="btn btn-ghost btn-sm" style={{ color: 'var(--error)' }} title="Xóa" onClick={() => removeQuizQuestion(qIdx)}>
+                            <Trash2 size={14} /> Xóa
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Question Text */}
+                      <div className="card" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
+                        <label style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '0.75rem', display: 'block' }}>
+                          Nội dung câu hỏi
+                        </label>
+                        <textarea
+                          className="form-textarea"
+                          rows="3"
+                          placeholder="Nhập nội dung câu hỏi trắc nghiệm..."
+                          value={q.question_text}
+                          onChange={e => updateQuizQuestion(qIdx, 'question_text', e.target.value)}
+                          style={{ fontSize: '1.05rem', fontWeight: 500 }}
+                        />
+                        <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                          <div style={{ flex: 1 }}>
+                            <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 4, display: 'block' }}>Điểm</label>
+                            <input
+                              type="number" className="form-input" min="1" max="100"
+                              value={q.points}
+                              onChange={e => updateQuizQuestion(qIdx, 'points', parseInt(e.target.value) || 10)}
+                              style={{ width: '100px' }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Options */}
+                      <div className="card" style={{ padding: '1.5rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                          <label style={{ fontWeight: 700, fontSize: '0.95rem' }}>
+                            Các đáp án <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: '0.85rem' }}>(nhấn vào đáp án đúng)</span>
+                          </label>
+                          {q.options.length < 6 && (
+                            <button className="btn btn-ghost btn-sm" onClick={() => addOption(qIdx)}>
+                              <Plus size={14} /> Thêm đáp án
+                            </button>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                          {q.options.map((opt, oIdx) => {
+                            const isCorrect = q.correct_option === oIdx;
+                            return (
+                              <div key={oIdx} style={{
+                                display: 'flex', alignItems: 'center', gap: '0.75rem',
+                                padding: '0.75rem 1rem', borderRadius: '10px',
+                                background: isCorrect ? '#dcfce7' : 'var(--bg)',
+                                border: isCorrect ? '2px solid var(--success)' : '1px solid var(--border)',
+                                transition: 'all 0.2s'
+                              }}>
+                                {/* Option Label */}
+                                <div
+                                  onClick={() => updateQuizQuestion(qIdx, 'correct_option', oIdx)}
+                                  style={{
+                                    width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+                                    background: isCorrect ? 'var(--success)' : optionColors[oIdx] || '#6b7280',
+                                    color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer',
+                                    transition: 'transform 0.15s', boxShadow: isCorrect ? '0 0 0 3px rgba(34,197,94,0.3)' : 'none'
+                                  }}
+                                  title={isCorrect ? 'Đáp án đúng' : 'Nhấn để chọn đáp án đúng'}
+                                >
+                                  {isCorrect ? <CheckCircle2 size={18} /> : optionLabels[oIdx]}
+                                </div>
+
+                                {/* Option Input */}
+                                <input
+                                  type="text"
+                                  className="form-input"
+                                  placeholder={`Đáp án ${optionLabels[oIdx]}`}
+                                  value={opt}
+                                  onChange={e => updateOption(qIdx, oIdx, e.target.value)}
+                                  style={{
+                                    flex: 1, border: 'none', background: 'transparent', padding: '0.5rem',
+                                    fontSize: '1rem', outline: 'none'
+                                  }}
+                                />
+
+                                {/* Remove Option */}
+                                {q.options.length > 2 && (
+                                  <button
+                                    className="btn btn-ghost btn-sm"
+                                    style={{ color: 'var(--text-muted)', padding: '0.25rem', flexShrink: 0 }}
+                                    onClick={() => removeOption(qIdx, oIdx)}
+                                  >
+                                    <X size={14} />
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {q.options.length < 6 && (
+                          <button
+                            className="btn btn-ghost"
+                            style={{ width: '100%', marginTop: '0.75rem', border: '2px dashed var(--border)', borderRadius: '10px', padding: '0.75rem', color: 'var(--text-muted)' }}
+                            onClick={() => addOption(qIdx)}
+                          >
+                            <Plus size={16} /> Thêm đáp án
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Quick Nav */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
+                        <button className="btn btn-secondary" disabled={qIdx === 0} onClick={() => setActiveQuestionIdx(qIdx - 1)}>
+                          ← Câu trước
+                        </button>
+                        {qIdx === quizQuestions.length - 1 ? (
+                          <button className="btn btn-primary" onClick={addQuizQuestion}>
+                            <Plus size={16} /> Thêm câu mới
+                          </button>
+                        ) : (
+                          <button className="btn btn-primary" onClick={() => setActiveQuestionIdx(qIdx + 1)}>
+                            Câu tiếp →
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

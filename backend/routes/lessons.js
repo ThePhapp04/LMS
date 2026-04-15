@@ -17,7 +17,11 @@ const upload = multer({
   storage,
   limits: { fileSize: 500 * 1024 * 1024 }, // 500 MB for video
   fileFilter(req, file, cb) {
-    const allowed = ['.pdf', '.doc', '.docx', '.ppt', '.pptx', '.mp4', '.webm', '.mov', '.avi', '.mkv'];
+    const allowed = [
+      '.pdf', '.doc', '.docx', '.ppt', '.pptx', '.txt', '.xlsx', '.xls',
+      '.mp4', '.webm', '.mov', '.avi', '.mkv', '.mp3', '.wav',
+      '.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'
+    ];
     const ext = path.extname(file.originalname).toLowerCase();
     if (!allowed.includes(ext)) return cb(new Error('File type not allowed'));
     cb(null, true);
