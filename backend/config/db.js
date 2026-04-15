@@ -1,15 +1,26 @@
-const mysql = require('mysql2/promise');
+const { Pool } = require('pg');
 require('dotenv').config();
 
-const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT || 3306,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL?.includes('localhost')
+    ? false
+    : { rejectUnauthorized: false },
 });
 
-module.exports = pool;
+// Convert MySQL-style ? placeholders to PostgreSQL $1, $2, ...
+function toPostgres(sql) {
+  let i = 0;
+  return sql.replace(/\?/g, () => `$${++i}`);
+}
+
+// Wrap pool.query to return [rows] matching mysql2/promise API shape
+const db = {
+  query: async (sql, params = []) => {
+    const pgSql = toPostgres(sql);
+    const result = await pool.query(pgSql, params);
+    return [result.rows];
+  },
+};
+
+module.exports = db;

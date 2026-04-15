@@ -21,12 +21,12 @@ exports.register = async (req, res) => {
     const userRole = ['student', 'lecturer', 'admin'].includes(role) ? role : 'student';
 
     const [result] = await db.query(
-      'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
+      'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?) RETURNING id',
       [name, email, hashedPassword, userRole]
     );
 
     res.status(201).json({
-      id: result.insertId,
+      id: result[0].id,
       name,
       email,
       role: userRole,

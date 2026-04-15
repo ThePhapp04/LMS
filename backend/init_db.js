@@ -1,72 +1,61 @@
 require('dotenv').config();
-const mysql = require('mysql2/promise');
+const { Pool } = require('pg');
 
 async function initializeDB() {
-  let connection;
-  try {
-    connection = await mysql.createConnection({
-      host: process.env.DB_HOST,
-      port: process.env.DB_PORT || 3306,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-    });
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL?.includes('localhost')
+      ? false
+      : { rejectUnauthorized: false },
+  });
 
-    console.log('Connected to MySQL server.');
-    await connection.query(`CREATE DATABASE IF NOT EXISTS \`${process.env.DB_NAME}\`;`);
-    console.log(`Database '${process.env.DB_NAME}' created or already exists.`);
-    await connection.query(`USE \`${process.env.DB_NAME}\`;`);
+  try {
+    console.log('Connected to PostgreSQL (Supabase).');
 
     // Users
-    await connection.query(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
-        id INT AUTO_INCREMENT PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
-        role ENUM('student', 'lecturer', 'admin') DEFAULT 'student',
+        role VARCHAR(20) DEFAULT 'student' CHECK (role IN ('student', 'lecturer', 'admin')),
         avatar_url VARCHAR(500)
       )
     `);
 
     // Courses
-    await connection.query(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS courses (
-        id INT AUTO_INCREMENT PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         title VARCHAR(255) NOT NULL,
         description TEXT,
         category VARCHAR(100) DEFAULT 'General',
         thumbnail_url VARCHAR(500),
-        lecturer_id INT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (lecturer_id) REFERENCES users(id) ON DELETE CASCADE
+        lecturer_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        price NUMERIC(10,2) DEFAULT 0,
+        level VARCHAR(50) DEFAULT 'Beginner',
+        created_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
 
-    // Add category & thumbnail if upgrading from old schema
-    await connection.query(`
-      ALTER TABLE courses
-        ADD COLUMN IF NOT EXISTS category VARCHAR(100) DEFAULT 'General',
-        ADD COLUMN IF NOT EXISTS thumbnail_url VARCHAR(500)
-    `).catch(() => {});
-
     // Chapters
-    await connection.query(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS chapters (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        course_id INT NOT NULL,
+        id SERIAL PRIMARY KEY,
+        course_id INT NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
         title VARCHAR(255) NOT NULL,
         chapter_order INT DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+        created_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
 
     // Lessons
-    await connection.query(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS lessons (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        course_id INT NOT NULL,
-        chapter_id INT,
+        id SERIAL PRIMARY KEY,
+        course_id INT NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+        chapter_id INT REFERENCES chapters(id) ON DELETE SET NULL,
         title VARCHAR(255) NOT NULL,
         content TEXT,
         video_url VARCHAR(500),
@@ -75,176 +64,144 @@ async function initializeDB() {
         file_type VARCHAR(50),
         lesson_order INT DEFAULT 0,
         duration VARCHAR(50),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
-        FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE
+        created_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
 
-    // Add new cols if upgrading
-    await connection.query(`
-      ALTER TABLE lessons
-        ADD COLUMN IF NOT EXISTS chapter_id INT,
-        ADD FOREIGN KEY IF NOT EXISTS (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE,
-        ADD COLUMN IF NOT EXISTS file_name VARCHAR(255),
-        ADD COLUMN IF NOT EXISTS file_type VARCHAR(50),
-        ADD COLUMN IF NOT EXISTS lesson_order INT DEFAULT 0,
-        ADD COLUMN IF NOT EXISTS duration VARCHAR(50)
-    `).catch(() => {});
-
     // Enrollments
-    await connection.query(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS enrollments (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        student_id INT NOT NULL,
-        course_id INT NOT NULL,
-        enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
-        FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+        id SERIAL PRIMARY KEY,
+        student_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        course_id INT NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+        enrolled_at TIMESTAMPTZ DEFAULT NOW(),
         UNIQUE(student_id, course_id)
       )
     `);
 
-    // Progress tracking
-    await connection.query(`
+    // Lesson Progress
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS lesson_progress (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        student_id INT NOT NULL,
-        lesson_id INT NOT NULL,
+        id SERIAL PRIMARY KEY,
+        student_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        lesson_id INT NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
         completed BOOLEAN DEFAULT FALSE,
-        completed_at TIMESTAMP,
-        FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
-        FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE,
+        completed_at TIMESTAMPTZ,
         UNIQUE(student_id, lesson_id)
       )
     `);
 
-    // Personal Notes
-    await connection.query(`
+    // Notes
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS notes (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT NOT NULL,
-        lesson_id INT NOT NULL,
+        id SERIAL PRIMARY KEY,
+        user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        lesson_id INT NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
         content TEXT NOT NULL,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-        FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE,
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
         UNIQUE(user_id, lesson_id)
       )
     `);
 
-    // Comments for Discussion
-    await connection.query(`
+    // Comments
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS comments (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT NOT NULL,
-        lesson_id INT NOT NULL,
+        id SERIAL PRIMARY KEY,
+        user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        lesson_id INT NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
         content TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-        FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE
+        created_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
 
     // Forum Topics
-    await connection.query(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS forum_topics (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        course_id INT,
-        user_id INT NOT NULL,
+        id SERIAL PRIMARY KEY,
+        course_id INT REFERENCES courses(id) ON DELETE CASCADE,
+        user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         title VARCHAR(255) NOT NULL,
         content TEXT NOT NULL,
         views INT DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        created_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
 
     // Forum Replies
-    await connection.query(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS forum_replies (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        topic_id INT NOT NULL,
-        user_id INT NOT NULL,
+        id SERIAL PRIMARY KEY,
+        topic_id INT NOT NULL REFERENCES forum_topics(id) ON DELETE CASCADE,
+        user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         content TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (topic_id) REFERENCES forum_topics(id) ON DELETE CASCADE,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        created_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
 
     // Assignments
-    await connection.query(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS assignments (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        course_id INT NOT NULL,
-        chapter_id INT NOT NULL,
+        id SERIAL PRIMARY KEY,
+        course_id INT NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+        chapter_id INT NOT NULL REFERENCES chapters(id) ON DELETE CASCADE,
         title VARCHAR(255) NOT NULL,
         description TEXT,
-        type ENUM('quiz', 'essay') NOT NULL DEFAULT 'quiz',
+        type VARCHAR(10) DEFAULT 'quiz' CHECK (type IN ('quiz', 'essay')),
         total_points INT DEFAULT 100,
-        due_date DATETIME,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
-        FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE
+        due_date TIMESTAMPTZ,
+        created_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
 
-    // Assignment Questions (for quizzes)
-    await connection.query(`
+    // Assignment Questions
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS assignment_questions (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        assignment_id INT NOT NULL,
+        id SERIAL PRIMARY KEY,
+        assignment_id INT NOT NULL REFERENCES assignments(id) ON DELETE CASCADE,
         question_text TEXT NOT NULL,
-        options JSON NOT NULL,
+        options JSONB NOT NULL,
         correct_option INT NOT NULL,
-        points INT DEFAULT 10,
-        FOREIGN KEY (assignment_id) REFERENCES assignments(id) ON DELETE CASCADE
+        points INT DEFAULT 10
       )
     `);
 
     // Assignment Submissions
-    await connection.query(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS assignment_submissions (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        assignment_id INT NOT NULL,
-        student_id INT NOT NULL,
+        id SERIAL PRIMARY KEY,
+        assignment_id INT NOT NULL REFERENCES assignments(id) ON DELETE CASCADE,
+        student_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         content TEXT,
-        answers JSON,
+        answers JSONB,
         score INT,
         feedback TEXT,
         file_url VARCHAR(500),
-        status ENUM('submitted', 'graded') DEFAULT 'submitted',
-        submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (assignment_id) REFERENCES assignments(id) ON DELETE CASCADE,
-        FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
+        status VARCHAR(20) DEFAULT 'submitted' CHECK (status IN ('submitted', 'graded')),
+        submitted_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
 
-    // Events (for Timetable)
-    await connection.query(`
+    // Events (Timetable)
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS events (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        course_id INT NOT NULL,
-        lecturer_id INT NOT NULL,
+        id SERIAL PRIMARY KEY,
+        course_id INT NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+        lecturer_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         title VARCHAR(255) NOT NULL,
-        start_time DATETIME NOT NULL,
-        end_time DATETIME NOT NULL,
-        event_type ENUM('lecture', 'deadline', 'livestream', 'other') DEFAULT 'lecture',
+        start_time TIMESTAMPTZ NOT NULL,
+        end_time TIMESTAMPTZ NOT NULL,
+        event_type VARCHAR(20) DEFAULT 'lecture' CHECK (event_type IN ('lecture', 'deadline', 'livestream', 'other')),
         meeting_link VARCHAR(500),
-        status ENUM('upcoming', 'completed', 'cancelled') DEFAULT 'upcoming',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
-        FOREIGN KEY (lecturer_id) REFERENCES users(id) ON DELETE CASCADE
+        status VARCHAR(20) DEFAULT 'upcoming' CHECK (status IN ('upcoming', 'completed', 'cancelled')),
+        created_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
 
-    console.log('All tables created/updated successfully!');
+    console.log('All tables created successfully!');
   } catch (error) {
     console.error('Error initializing database:', error);
   } finally {
-    if (connection) await connection.end();
+    await pool.end();
     process.exit();
   }
 }

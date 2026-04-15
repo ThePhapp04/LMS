@@ -17,7 +17,7 @@ exports.getCourses = async (req, res) => {
       JOIN users u ON c.lecturer_id = u.id
       LEFT JOIN enrollments e ON e.course_id = c.id
       LEFT JOIN lessons l ON l.course_id = c.id
-      WHERE (c.title LIKE ? OR c.description LIKE ?)
+      WHERE (c.title ILIKE ? OR c.description ILIKE ?)
     `;
     const params = [search, search];
 
@@ -106,10 +106,10 @@ exports.createCourse = async (req, res) => {
   }
   try {
     const [result] = await db.query(
-      'INSERT INTO courses (title, description, category, thumbnail_url, lecturer_id, price, level) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO courses (title, description, category, thumbnail_url, lecturer_id, price, level) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id',
       [title, description, category || 'General', thumbnail_url, req.user.id, price || 0, level || 'Beginner']
     );
-    res.status(201).json({ id: result.insertId, title, description, category, thumbnail_url, lecturer_id: req.user.id, price, level });
+    res.status(201).json({ id: result[0].id, title, description, category, thumbnail_url, lecturer_id: req.user.id, price, level });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

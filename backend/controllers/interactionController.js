@@ -62,7 +62,7 @@ exports.addComment = async (req, res) => {
 
   try {
     const [result] = await db.query(
-      'INSERT INTO comments (user_id, lesson_id, content) VALUES (?, ?, ?)',
+      'INSERT INTO comments (user_id, lesson_id, content) VALUES (?, ?, ?) RETURNING id',
       [user_id, lesson_id, content]
     );
 
@@ -71,7 +71,7 @@ exports.addComment = async (req, res) => {
       FROM comments c
       JOIN users u ON c.user_id = u.id
       WHERE c.id = ?
-    `, [result.insertId]);
+    `, [result[0].id]);
 
     res.status(201).json(newComment[0]);
   } catch (error) {
@@ -142,10 +142,10 @@ exports.createForum = async (req, res) => {
   const { title, content, course_id } = req.body;
   try {
     const [result] = await db.query(
-      'INSERT INTO forum_topics (course_id, user_id, title, content) VALUES (?, ?, ?, ?)',
+      'INSERT INTO forum_topics (course_id, user_id, title, content) VALUES (?, ?, ?, ?) RETURNING id',
       [course_id || null, req.user.id, title, content]
     );
-    res.status(201).json({ id: result.insertId });
+    res.status(201).json({ id: result[0].id });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -156,10 +156,10 @@ exports.replyForum = async (req, res) => {
   const { content } = req.body;
   try {
     const [result] = await db.query(
-      'INSERT INTO forum_replies (topic_id, user_id, content) VALUES (?, ?, ?)',
+      'INSERT INTO forum_replies (topic_id, user_id, content) VALUES (?, ?, ?) RETURNING id',
       [req.params.id, req.user.id, content]
     );
-    res.status(201).json({ id: result.insertId });
+    res.status(201).json({ id: result[0].id });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -21,12 +21,12 @@ exports.createLesson = async (req, res) => {
     }
 
     const [result] = await db.query(
-      'INSERT INTO lessons (course_id, chapter_id, title, content, video_url, file_url, file_name, file_type, lesson_order, duration) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO lessons (course_id, chapter_id, title, content, video_url, file_url, file_name, file_type, lesson_order, duration) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id',
       [course_id, chapter_id || null, title, content, video_url || null, file_url, file_name, file_type, lesson_order || 0, duration || null]
     );
 
     res.status(201).json({
-      id: result.insertId, course_id, chapter_id, title, content, video_url, file_url, file_name, file_type,
+      id: result[0].id, course_id, chapter_id, title, content, video_url, file_url, file_name, file_type,
       lesson_order: lesson_order || 0, duration
     });
   } catch (error) {
@@ -92,9 +92,9 @@ exports.markProgress = async (req, res) => {
     await db.query(
       `INSERT INTO lesson_progress (student_id, lesson_id, completed, completed_at)
        VALUES (?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE completed=?, completed_at=?`,
-      [req.user.id, lesson_id, completed, completed ? new Date() : null,
-       completed, completed ? new Date() : null]
+       ON CONFLICT (student_id, lesson_id) DO UPDATE
+         SET completed = EXCLUDED.completed, completed_at = EXCLUDED.completed_at`,
+      [req.user.id, lesson_id, completed, completed ? new Date() : null]
     );
     res.json({ message: 'Progress updated' });
   } catch (error) {

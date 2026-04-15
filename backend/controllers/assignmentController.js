@@ -7,10 +7,10 @@ exports.createAssignment = async (req, res) => {
   const course_id = req.params.courseId;
   try {
     const [result] = await db.query(
-      'INSERT INTO assignments (course_id, chapter_id, title, description, type, total_points, due_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO assignments (course_id, chapter_id, title, description, type, total_points, due_date) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id',
       [course_id, chapter_id, title, description, type, total_points || 100, due_date || null]
     );
-    res.status(201).json({ id: result.insertId, message: 'Assignment created successfully' });
+    res.status(201).json({ id: result[0].id, message: 'Assignment created successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -86,10 +86,10 @@ exports.addQuestion = async (req, res) => {
   const { question_text, options, correct_option, points } = req.body;
   try {
     const [result] = await db.query(
-      'INSERT INTO assignment_questions (assignment_id, question_text, options, correct_option, points) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO assignment_questions (assignment_id, question_text, options, correct_option, points) VALUES (?, ?, ?, ?, ?) RETURNING id',
       [req.params.id, question_text, JSON.stringify(options), correct_option, points || 10]
     );
-    res.status(201).json({ id: result.insertId, message: 'Question added' });
+    res.status(201).json({ id: result[0].id, message: 'Question added' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

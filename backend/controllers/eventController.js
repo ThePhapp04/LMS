@@ -106,12 +106,12 @@ exports.createEvent = async (req, res) => {
     }
 
     const [result] = await db.query(
-      'INSERT INTO events (course_id, lecturer_id, title, start_time, end_time, event_type, meeting_link) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO events (course_id, lecturer_id, title, start_time, end_time, event_type, meeting_link) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id',
       [course_id, req.user.id, title, start_time, end_time, event_type || 'lecture', meeting_link || null]
     );
 
     res.status(201).json({ 
-      id: result.insertId, course_id, lecturer_id: req.user.id, title, start_time, end_time, event_type, meeting_link 
+      id: result[0].id, course_id, lecturer_id: req.user.id, title, start_time, end_time, event_type, meeting_link 
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

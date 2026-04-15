@@ -11,10 +11,10 @@ exports.createChapter = async (req, res) => {
     }
 
     const [result] = await db.query(
-      'INSERT INTO chapters (course_id, title, chapter_order) VALUES (?, ?, ?)',
+      'INSERT INTO chapters (course_id, title, chapter_order) VALUES (?, ?, ?) RETURNING id',
       [course_id, title, chapter_order || 0]
     );
-    res.status(201).json({ id: result.insertId, course_id, title, chapter_order: chapter_order || 0 });
+    res.status(201).json({ id: result[0].id, course_id, title, chapter_order: chapter_order || 0 });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
