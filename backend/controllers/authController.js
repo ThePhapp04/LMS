@@ -31,7 +31,7 @@ exports.register = async (req, res) => {
       email,
       role: userRole,
       avatar_url: null,
-      token: generateToken(result.insertId, userRole),
+      token: generateToken(result[0].id, userRole),
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

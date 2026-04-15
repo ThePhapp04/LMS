@@ -35,7 +35,7 @@ exports.getCourses = async (req, res) => {
       query += ' AND c.price > 0';
     }
 
-    query += ' GROUP BY c.id ORDER BY c.created_at DESC';
+    query += ' GROUP BY c.id, u.name ORDER BY c.created_at DESC';
 
     const [courses] = await db.query(query, params);
     res.json(courses);
@@ -53,7 +53,7 @@ exports.getCourseById = async (req, res) => {
       JOIN users u ON c.lecturer_id = u.id
       LEFT JOIN enrollments e ON e.course_id = c.id
       WHERE c.id = ?
-      GROUP BY c.id
+      GROUP BY c.id, u.name
     `, [req.params.id]);
 
     if (courses.length === 0) return res.status(404).json({ message: 'Course not found' });
