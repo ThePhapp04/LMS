@@ -48,7 +48,7 @@ const InstructorDashboard = () => {
     <div className="main-content">
       <div className="page-header" style={{ marginBottom: '2rem' }}>
         <div>
-          <h1 className="page-title">Instructor Dashboard</h1>
+          <h1 className="page-title">Quản lý giảng dạy</h1>
           <p className="page-subtitle">Quản lý và theo dõi hiệu suất các khóa học của bạn</p>
         </div>
         <div>

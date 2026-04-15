@@ -82,15 +82,15 @@ const Dashboard = () => {
       {user?.role === 'lecturer' && (
         <div className="stats-grid">
           <div className="stat-card indigo">
-            <div className="stat-label">My Courses</div>
+            <div className="stat-label">Khóa học của tôi</div>
             <div className="stat-value">{allCourses.length}</div>
           </div>
           <div className="stat-card purple">
-            <div className="stat-label">Total Lessons</div>
+            <div className="stat-label">Tổng bài giảng</div>
             <div className="stat-value">{allCourses.reduce((s, c) => s + (c.lesson_count || 0), 0)}</div>
           </div>
           <div className="stat-card cyan">
-            <div className="stat-label">Enrolled Students</div>
+            <div className="stat-label">Học viên đăng ký</div>
             <div className="stat-value">{allCourses.reduce((s, c) => s + (c.student_count || 0), 0)}</div>
           </div>
         </div>
@@ -98,23 +98,23 @@ const Dashboard = () => {
 
       {/* Content */}
       {loading ? (
-        <div className="loading-wrapper"><div className="spinner"></div><p>Loading...</p></div>
+        <div className="loading-wrapper"><div className="spinner"></div><p>Đang tải...</p></div>
       ) : (
         <>
           {user?.role === 'student' && (
             <div>
               <div className="page-header">
                 <div>
-                  <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>My Enrolled Courses</h2>
-                  <p className="page-subtitle">Pick up where you left off</p>
+                  <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Khóa học của tôi</h2>
+                  <p className="page-subtitle">Tiếp tục học từ lần trước</p>
                 </div>
               </div>
               {enrollments.length === 0 ? (
                 <div className="empty-state card" style={{ padding: '3rem' }}>
                   <div className="empty-state-icon">📚</div>
-                  <h3>No courses yet</h3>
-                  <p>You haven't enrolled in any courses. Start learning today!</p>
-                  <Link to="/courses" className="btn btn-primary" style={{ marginTop: '1rem' }}>Browse Courses</Link>
+                  <h3>Chưa có khóa học nào</h3>
+                  <p>Bạn chưa đăng ký khóa học nào. Hãy bắt đầu học ngay hôm nay!</p>
+                  <Link to="/courses" className="btn btn-primary" style={{ marginTop: '1rem' }}>Khám phá khóa học</Link>
                 </div>
               ) : (
                 <div className="grid-cards">
@@ -129,7 +129,7 @@ const Dashboard = () => {
                       <div className="course-card-body">
                         <div className="course-card-title">{course.title}</div>
                         <div className="course-card-desc">{course.description?.substring(0, 90)}{course.description?.length > 90 && '...'}</div>
-                        <Link to={`/courses/${course.id}`} className="btn btn-primary btn-sm btn-block">Continue Learning →</Link>
+                        <Link to={`/courses/${course.id}`} className="btn btn-primary btn-sm btn-block">Tiếp tục học →</Link>
                       </div>
                     </div>
                   ))}
@@ -142,17 +142,17 @@ const Dashboard = () => {
             <div>
               <div className="page-header">
                 <div>
-                  <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>My Courses</h2>
-                  <p className="page-subtitle">Manage your course catalog</p>
+                  <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Khóa học của tôi</h2>
+                  <p className="page-subtitle">Quản lý các khóa học đang giảng dạy</p>
                 </div>
-                <Link to="/courses" className="btn btn-primary"><PlusCircle size={16} /> Create Course</Link>
+                <Link to="/courses" className="btn btn-primary"><PlusCircle size={16} /> Tạo khóa học</Link>
               </div>
               {allCourses.length === 0 ? (
                 <div className="empty-state card" style={{ padding: '3rem' }}>
                   <div className="empty-state-icon">🎓</div>
-                  <h3>No courses yet</h3>
-                  <p>Create your first course and start inspiring students!</p>
-                  <Link to="/courses" className="btn btn-primary" style={{ marginTop: '1rem' }}>+ Create Course</Link>
+                  <h3>Chưa có khóa học nào</h3>
+                  <p>Hãy tạo khóa học đầu tiên và truyền cảm hứng cho học viên!</p>
+                  <Link to="/courses" className="btn btn-primary" style={{ marginTop: '1rem' }}>+ Tạo khóa học</Link>
                 </div>
               ) : (
                 <div className="grid-cards">
@@ -167,10 +167,10 @@ const Dashboard = () => {
                       <div className="course-card-body">
                         <div className="course-card-title">{course.title}</div>
                         <div className="course-card-meta">
-                          <span className="course-card-meta-item"><TrendingUp size={13} /> {course.lesson_count || 0} lessons</span>
-                          <span className="course-card-meta-item">👥 {course.student_count || 0} students</span>
+                          <span className="course-card-meta-item"><TrendingUp size={13} /> {course.lesson_count || 0} bài</span>
+                          <span className="course-card-meta-item">👥 {course.student_count || 0} học viên</span>
                         </div>
-                        <Link to={`/courses/${course.id}`} className="btn btn-secondary btn-sm btn-block">Manage Course</Link>
+                        <Link to={`/courses/${course.id}`} className="btn btn-secondary btn-sm btn-block">Quản lý khóa học</Link>
                       </div>
                     </div>
                   ))}

@@ -73,6 +73,82 @@ const translations = {
     guide_need_help: 'Cần thêm hỗ trợ?',
     guide_help_desc: 'Nếu bạn gặp khó khăn, hãy đặt câu hỏi tại diễn đàn cộng đồng.',
     guide_go_forum: 'Đến Diễn đàn',
+
+    // Dashboard
+    dashboard_welcome: 'Chào mừng trở lại',
+    dashboard_my_courses: 'Khóa học của tôi',
+    dashboard_progress: 'Tiến độ học tập',
+    dashboard_continue: 'Tiếp tục học',
+    dashboard_completed: 'Đã hoàn thành',
+    dashboard_enrolled: 'Đã đăng ký',
+    dashboard_no_courses: 'Chưa có khóa học',
+    dashboard_no_courses_sub: 'Hãy khám phá và đăng ký khóa học đầu tiên của bạn!',
+    dashboard_browse: 'Khám phá khóa học',
+
+    // Instructor
+    instructor_dashboard: 'Quản lý giảng dạy',
+    instructor_courses: 'Khóa học của tôi',
+    instructor_create: 'Tạo khóa học mới',
+    instructor_students: 'Học viên',
+    instructor_no_courses: 'Chưa có khóa học nào. Hãy tạo khóa học đầu tiên của bạn!',
+    instructor_edit: 'Chỉnh sửa',
+    instructor_delete: 'Xóa',
+    instructor_total_students: 'Tổng học viên',
+    instructor_total_courses: 'Tổng khóa học',
+    instructor_total_lessons: 'Tổng bài giảng',
+
+    // Course Editor
+    editor_title: 'Tạo / Chỉnh sửa khóa học',
+    editor_course_title: 'Tên khóa học',
+    editor_course_desc: 'Mô tả',
+    editor_category: 'Chủ đề',
+    editor_level: 'Cấp độ',
+    editor_price: 'Giá (0 = Miễn phí)',
+    editor_thumbnail: 'Ảnh bìa',
+    editor_chapters: 'Danh sách chương',
+    editor_add_chapter: 'Thêm chương',
+    editor_add_lesson: 'Thêm bài giảng',
+    editor_add_quiz: 'Thêm bài kiểm tra',
+    editor_lesson_title: 'Tiêu đề bài giảng',
+    editor_lesson_content: 'Nội dung',
+    editor_video_url: 'Link video (YouTube)',
+    editor_duration: 'Thời lượng',
+    editor_publish: 'Xuất bản',
+    editor_unpublish: 'Hủy xuất bản',
+    editor_save: 'Lưu thay đổi',
+
+    // Forum
+    forum_title: 'Diễn đàn thảo luận',
+    forum_new_topic: 'Tạo chủ đề mới',
+    forum_all_courses: 'Tất cả khóa học',
+    forum_replies: 'trả lời',
+    forum_no_topics: 'Chưa có chủ đề nào',
+    forum_be_first: 'Hãy là người đầu tiên tạo chủ đề thảo luận!',
+
+    // Gradebook
+    gradebook_title: 'Bảng điểm',
+    gradebook_assignment: 'Bài tập / Bài kiểm tra',
+    gradebook_score: 'Điểm',
+    gradebook_submitted: 'Ngày nộp',
+    gradebook_status: 'Trạng thái',
+    gradebook_graded: 'Đã chấm',
+    gradebook_pending: 'Chờ chấm',
+    gradebook_not_submitted: 'Chưa nộp',
+
+    // Assignment
+    assignment_quiz: 'Bài kiểm tra',
+    assignment_essay: 'Bài tự luận',
+    assignment_submit: 'Nộp bài',
+    assignment_submitted: 'Đã nộp',
+    assignment_score: 'Điểm số',
+    assignment_feedback: 'Nhận xét',
+    assignment_deadline: 'Hạn nộp',
+    assignment_retry: 'Làm lại',
+
+    // Level labels
+    level_beginner: 'Cơ bản',
+    level_intermediate: 'Trung cấp',
+    level_advanced: 'Nâng cao',
   },
   en: {
     // Navbar
@@ -146,6 +222,82 @@ const translations = {
     guide_need_help: 'Need more help?',
     guide_help_desc: 'Post a question in the community forum — lecturers and students are happy to help!',
     guide_go_forum: 'Visit Forum',
+
+    // Dashboard
+    dashboard_welcome: 'Welcome back',
+    dashboard_my_courses: 'My Courses',
+    dashboard_progress: 'Learning Progress',
+    dashboard_continue: 'Continue',
+    dashboard_completed: 'Completed',
+    dashboard_enrolled: 'Enrolled',
+    dashboard_no_courses: 'No courses yet',
+    dashboard_no_courses_sub: 'Browse and enroll in your first course!',
+    dashboard_browse: 'Browse Courses',
+
+    // Instructor
+    instructor_dashboard: 'Instructor Panel',
+    instructor_courses: 'My Courses',
+    instructor_create: 'Create Course',
+    instructor_students: 'Students',
+    instructor_no_courses: 'No courses yet. Create your first course!',
+    instructor_edit: 'Edit',
+    instructor_delete: 'Delete',
+    instructor_total_students: 'Total Students',
+    instructor_total_courses: 'Total Courses',
+    instructor_total_lessons: 'Total Lessons',
+
+    // Course Editor
+    editor_title: 'Create / Edit Course',
+    editor_course_title: 'Course Title',
+    editor_course_desc: 'Description',
+    editor_category: 'Category',
+    editor_level: 'Level',
+    editor_price: 'Price (0 = Free)',
+    editor_thumbnail: 'Thumbnail',
+    editor_chapters: 'Chapters',
+    editor_add_chapter: 'Add Chapter',
+    editor_add_lesson: 'Add Lesson',
+    editor_add_quiz: 'Add Quiz',
+    editor_lesson_title: 'Lesson Title',
+    editor_lesson_content: 'Content',
+    editor_video_url: 'Video URL (YouTube)',
+    editor_duration: 'Duration',
+    editor_publish: 'Publish',
+    editor_unpublish: 'Unpublish',
+    editor_save: 'Save Changes',
+
+    // Forum
+    forum_title: 'Discussion Forum',
+    forum_new_topic: 'New Topic',
+    forum_all_courses: 'All Courses',
+    forum_replies: 'replies',
+    forum_no_topics: 'No topics yet',
+    forum_be_first: 'Be the first to start a discussion!',
+
+    // Gradebook
+    gradebook_title: 'Gradebook',
+    gradebook_assignment: 'Assignment / Quiz',
+    gradebook_score: 'Score',
+    gradebook_submitted: 'Submitted',
+    gradebook_status: 'Status',
+    gradebook_graded: 'Graded',
+    gradebook_pending: 'Pending',
+    gradebook_not_submitted: 'Not submitted',
+
+    // Assignment
+    assignment_quiz: 'Quiz',
+    assignment_essay: 'Essay',
+    assignment_submit: 'Submit',
+    assignment_submitted: 'Submitted',
+    assignment_score: 'Score',
+    assignment_feedback: 'Feedback',
+    assignment_deadline: 'Deadline',
+    assignment_retry: 'Retry',
+
+    // Level labels
+    level_beginner: 'Beginner',
+    level_intermediate: 'Intermediate',
+    level_advanced: 'Advanced',
   },
 };
 

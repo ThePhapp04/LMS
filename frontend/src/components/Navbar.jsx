@@ -2,7 +2,7 @@ import React, { useContext, useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
 import { LangContext } from '../contexts/LangContext';
-import { GraduationCap, BookOpen, LogOut, MessageSquare, User, ChevronDown, Globe, Calendar } from 'lucide-react';
+import { GraduationCap, BookOpen, LogOut, MessageSquare, User, ChevronDown, Globe, Calendar, Menu, X } from 'lucide-react';
 import { assetUrl } from '../services/api';
 
 const Navbar = () => {
@@ -12,6 +12,7 @@ const Navbar = () => {
   const location = useLocation();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const userMenuRef = useRef(null);
   const langMenuRef = useRef(null);
 
@@ -19,6 +20,7 @@ const Navbar = () => {
     logout();
     navigate('/login');
     setShowUserMenu(false);
+    setShowMobileMenu(false);
   };
 
   const isActive = (path) => location.pathname === path;
@@ -54,6 +56,7 @@ const Navbar = () => {
         <span className="nav-brand-text">VanAnh LMS</span>
       </Link>
 
+      {/* Desktop nav */}
       <div className="nav-links">
         {user ? (
           <>
@@ -275,9 +278,96 @@ const Navbar = () => {
         ) : (
           <>
             <Link to="/login" className="btn btn-secondary btn-sm">{t('nav_login')}</Link>
-            <Link to="/register" className="btn btn-primary btn-sm">Get Started</Link>
+            <Link to="/register" className="btn btn-primary btn-sm">Đăng ký</Link>
           </>
         )}
+      </div>
+
+      {/* Hamburger button - mobile only */}
+      <button className="nav-hamburger" onClick={() => setShowMobileMenu(true)} aria-label="Mở menu">
+        <Menu size={24} />
+      </button>
+
+      {/* Mobile overlay */}
+      <div
+        className={`nav-mobile-overlay ${showMobileMenu ? 'open' : ''}`}
+        onClick={() => setShowMobileMenu(false)}
+        onKeyDown={e => e.key === 'Escape' && setShowMobileMenu(false)}
+        role="button"
+        tabIndex={-1}
+        aria-label="Đóng menu"
+      />
+
+      {/* Mobile drawer */}
+      <div className={`nav-mobile-drawer ${showMobileMenu ? 'open' : ''}`}>
+        <div className="nav-mobile-header">
+          <Link to="/" className="nav-brand" onClick={() => setShowMobileMenu(false)}>
+            <div className="nav-brand-icon"><GraduationCap size={18} /></div>
+            <span>VanAnh LMS</span>
+          </Link>
+          <button className="nav-mobile-close" onClick={() => setShowMobileMenu(false)}>
+            <X size={22} />
+          </button>
+        </div>
+
+        {user && (
+          <div className="nav-mobile-user">
+            <div className="avatar" style={{ overflow: 'hidden', flexShrink: 0 }}>
+              {user.avatar_url ? (
+                <img src={assetUrl(user.avatar_url)} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                user.name?.charAt(0)?.toUpperCase()
+              )}
+            </div>
+            <div className="nav-mobile-user-info">
+              <span className="nav-mobile-user-name">{user.name}</span>
+              <span className="nav-mobile-user-role">{user.role}</span>
+            </div>
+          </div>
+        )}
+
+        <div className="nav-mobile-links">
+          {user ? (
+            <>
+              <Link to={coursesPath} className={`nav-mobile-link ${isCoursesActive ? 'active' : ''}`}>
+                <BookOpen size={18} /> {t('nav_courses')}
+              </Link>
+              <Link to="/timetable" className={`nav-mobile-link ${isActive('/timetable') ? 'active' : ''}`}>
+                <Calendar size={18} /> {t('nav_timetable')}
+              </Link>
+              <Link to="/guide" className={`nav-mobile-link ${isActive('/guide') ? 'active' : ''}`}>
+                <MessageSquare size={18} /> {t('nav_guide')}
+              </Link>
+              <Link to="/forum" className={`nav-mobile-link ${isActive('/forum') ? 'active' : ''}`}>
+                <MessageSquare size={18} /> {t('nav_forum')}
+              </Link>
+              <Link to="/profile" className={`nav-mobile-link ${isActive('/profile') ? 'active' : ''}`}>
+                <User size={18} /> {t('nav_profile')}
+              </Link>
+              <button className="nav-mobile-link-btn" onClick={handleLogout}>
+                <LogOut size={18} /> {t('nav_logout')}
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="nav-mobile-link">
+                <User size={18} /> {t('nav_login')}
+              </Link>
+              <Link to="/register" className="nav-mobile-link">
+                <GraduationCap size={18} /> Đăng ký dùng thử
+              </Link>
+            </>
+          )}
+        </div>
+
+        <div className="nav-mobile-footer">
+          <button className={`nav-mobile-lang-btn ${lang === 'vi' ? 'active' : ''}`} onClick={() => switchLang('vi')}>
+            🇻🇳 VI
+          </button>
+          <button className={`nav-mobile-lang-btn ${lang === 'en' ? 'active' : ''}`} onClick={() => switchLang('en')}>
+            🇬🇧 EN
+          </button>
+        </div>
       </div>
     </nav>
   );

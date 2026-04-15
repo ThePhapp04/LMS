@@ -5,8 +5,11 @@ import { AuthContext } from '../contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, BookOpen, Users, GraduationCap, Star, Filter } from 'lucide-react';
 
-const CATEGORIES = ['All', 'General', 'Technology', 'Business', 'Design', 'Science', 'Language', 'Arts'];
-const LEVELS = ['All', 'Beginner', 'Intermediate', 'Advanced'];
+const CATEGORIES = ['Tất cả', 'Chung', 'Công nghệ', 'Kinh doanh', 'Thiết kế', 'Khoa học', 'Ngôn ngữ', 'Nghệ thuật'];
+const CATEGORIES_VAL = ['All', 'General', 'Technology', 'Business', 'Design', 'Science', 'Language', 'Arts'];
+const LEVELS = ['Tất cả', 'Cơ bản', 'Trung cấp', 'Nâng cao'];
+const LEVELS_VAL = ['All', 'Beginner', 'Intermediate', 'Advanced'];
+const LEVEL_LABELS = { Beginner: 'Cơ bản', Intermediate: 'Trung cấp', Advanced: 'Nâng cao' };
 
 const CourseList = () => {
   const [courses, setCourses] = useState([]);
@@ -70,10 +73,10 @@ const CourseList = () => {
             <div className="filter-group" style={{ marginBottom: '1.5rem' }}>
               <h4 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.75rem' }}>Chủ đề</h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {CATEGORIES.map(c => (
-                  <label key={c} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem' }}>
-                    <input type="radio" name="category" checked={category === c} onChange={() => setCategory(c)} />
-                    {c}
+                {CATEGORIES.map((label, i) => (
+                  <label key={label} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem' }}>
+                    <input type="radio" name="category" checked={category === CATEGORIES_VAL[i]} onChange={() => setCategory(CATEGORIES_VAL[i])} />
+                    {label}
                   </label>
                 ))}
               </div>
@@ -83,10 +86,10 @@ const CourseList = () => {
             <div className="filter-group" style={{ marginBottom: '1.5rem' }}>
               <h4 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.75rem' }}>Cấp độ</h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {LEVELS.map(l => (
-                  <label key={l} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem' }}>
-                    <input type="radio" name="level" checked={level === l} onChange={() => setLevel(l)} />
-                    {l}
+                {LEVELS.map((label, i) => (
+                  <label key={label} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem' }}>
+                    <input type="radio" name="level" checked={level === LEVELS_VAL[i]} onChange={() => setLevel(LEVELS_VAL[i])} />
+                    {label}
                   </label>
                 ))}
               </div>
@@ -134,7 +137,7 @@ const CourseList = () => {
                       : <GraduationCap size={40} />
                     }
                     <span className="badge badge-primary" style={{ position: 'absolute', top: 10, left: 10 }}>{course.category}</span>
-                    <span className="badge badge-purple" style={{ position: 'absolute', top: 10, right: 10 }}>{course.level || 'Beginner'}</span>
+                    <span className="badge badge-purple" style={{ position: 'absolute', top: 10, right: 10 }}>{LEVEL_LABELS[course.level] || course.level || 'Cơ bản'}</span>
                   </div>
                   <div className="course-card-body" style={{ padding: '1rem', display: 'flex', flexDirection: 'column' }}>
                     <div className="course-card-title" style={{ fontSize: '1.05rem', minHeight: '44px', marginBottom: '4px' }}>

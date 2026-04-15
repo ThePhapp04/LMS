@@ -6,7 +6,9 @@ import { AuthContext } from '../contexts/AuthContext';
 import { FileEdit, List, DollarSign, CheckCircle, ArrowLeft, Upload, Plus, Trash2, X, Video, File, FileText, ClipboardList, Calendar, Copy, ChevronLeft, ChevronRight, Eye, Save, CheckCircle2, AlertCircle } from 'lucide-react';
 
 const CATEGORIES = ['General', 'Technology', 'Business', 'Design', 'Science', 'Language', 'Arts'];
+const CATEGORY_LABELS = { General: 'Chung', Technology: 'Công nghệ', Business: 'Kinh doanh', Design: 'Thiết kế', Science: 'Khoa học', Language: 'Ngôn ngữ', Arts: 'Nghệ thuật' };
 const LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
+const LEVEL_LABELS = { Beginner: 'Cơ bản', Intermediate: 'Trung cấp', Advanced: 'Nâng cao' };
 
 const CourseEditor = () => {
   const { id } = useParams();
@@ -429,7 +431,7 @@ const CourseEditor = () => {
                 <div className="form-group">
                   <label className="form-label">Chủ đề</label>
                   <select className="form-select" value={course.category} onChange={e => setCourse({...course, category: e.target.value})}>
-                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    {CATEGORIES.map(c => <option key={c} value={c}>{CATEGORY_LABELS[c] || c}</option>)}
                   </select>
                 </div>
                 <div className="form-group">
@@ -470,7 +472,7 @@ const CourseEditor = () => {
                     {LEVELS.map(l => (
                       <label key={l} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
                         <input type="radio" name="level" checked={course.level === l} onChange={() => setCourse({...course, level: l})} />
-                        {l}
+                        {LEVEL_LABELS[l] || l}
                       </label>
                     ))}
                   </div>

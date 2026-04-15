@@ -83,8 +83,8 @@ const CourseDetail = () => {
       }}>
         <div style={{ maxWidth: '800px' }}>
           <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-            <span className="badge" style={{ background: 'rgba(255,255,255,0.1)', color: '#fff' }}>{course.category || 'General'}</span>
-            <span className="badge badge-warning">{course.level || 'Beginner'}</span>
+            <span className="badge" style={{ background: 'rgba(255,255,255,0.1)', color: '#fff' }}>{course.category || 'Chung'}</span>
+            <span className="badge badge-warning">{{ Beginner: 'Cơ bản', Intermediate: 'Trung cấp', Advanced: 'Nâng cao' }[course.level] || course.level || 'Cơ bản'}</span>
           </div>
           <h1 style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '1rem', lineHeight: 1.2 }}>{course.title}</h1>
           <p style={{ fontSize: '1.1rem', color: '#cbd5e1', marginBottom: '1.5rem', lineHeight: 1.6 }}>{course.description}</p>
