@@ -49,7 +49,7 @@ const translations = {
     course_catalog: 'Khóa học',
     course_subtitle: 'Tìm kiếm và chọn lựa các khóa học phù hợp với bạn',
     course_filter: 'Bộ lọc',
-    course_category: 'Danh mục',
+    course_category: 'Chủ đề',
     course_level: 'Cấp độ',
     course_price: 'Giá',
     course_all: 'Tất cả',

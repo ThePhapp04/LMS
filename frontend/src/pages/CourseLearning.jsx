@@ -3,9 +3,10 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 import { AuthContext } from '../contexts/AuthContext';
 import {
-  FileText, FileVideo, CheckCircle2, Circle, ArrowLeft, Download, Link2, BookOpen, ClipboardList, Check
+  FileText, FileVideo, Circle, ArrowLeft, Download, Link2, BookOpen, ClipboardList, Check
 } from 'lucide-react';
 import AssignmentViewer from '../components/AssignmentViewer';
+import { Confetti, FunProgressBar, LessonCompleteToast } from '../components/FunElements';
 
 function getYoutubeId(url) {
   if (!url) return null;
@@ -33,6 +34,8 @@ const CourseLearning = () => {
   const [notes, setNotes] = useState('');
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
+  const [showCompleteToast, setShowCompleteToast] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
     fetchCourseAndProgress();
@@ -114,6 +117,11 @@ const CourseLearning = () => {
     try {
       await api.post('/lessons/progress', { lesson_id: lessonId, completed: !current });
       setProgress(p => ({ ...p, [lessonId]: !current }));
+      if (!current) {
+        setShowCompleteToast(true);
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 3500);
+      }
     } catch { }
   };
 
@@ -138,10 +146,7 @@ const CourseLearning = () => {
         
         {user?.role === 'student' && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', minWidth: '300px' }}>
-            <span style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>Tiến độ: {progressPct}%</span>
-            <div className="progress-bar-wrap" style={{ flex: 1, height: '6px', background: 'rgba(255,255,255,0.2)' }}>
-              <div className="progress-bar-fill" style={{ width: `${progressPct}%`, background: '#22c55e' }} />
-            </div>
+            <FunProgressBar pct={progressPct} />
           </div>
         )}
       </div>
@@ -162,10 +167,11 @@ const CourseLearning = () => {
                 {user?.role === 'student' && activeLesson.item_type !== 'assignment' && (
                     <button
                       className={`btn ${progress[activeLesson.id] ? 'btn-success' : 'btn-secondary'}`}
+                      style={progress[activeLesson.id] ? {} : { background: 'linear-gradient(135deg, #7c3aed, #4f46e5)', color: '#fff', border: 'none' }}
                       onClick={() => toggleProgress(activeLesson.id, progress[activeLesson.id])}>
                       {progress[activeLesson.id]
-                          ? <><CheckCircle2 size={16} /> Đã hoàn thành</>
-                          : <><Circle size={16} /> Đánh dấu hoàn thành</>}
+                          ? <>✅ Đã hoàn thành!</>
+                          : <>🎯 Đánh dấu hoàn thành</>}
                     </button>
                 )}
               </div>
@@ -388,6 +394,8 @@ const CourseLearning = () => {
           </div>
         </div>
       </div>
+      <Confetti active={showConfetti} />
+      <LessonCompleteToast show={showCompleteToast} onClose={() => setShowCompleteToast(false)} />
     </div>
   );
 };

@@ -426,7 +426,7 @@ const CourseEditor = () => {
                   <textarea className="form-textarea" required rows="6" value={course.description} onChange={e => setCourse({...course, description: e.target.value})} placeholder="Mô tả những gì học viên sẽ đạt được..." />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Danh mục</label>
+                  <label className="form-label">Chủ đề</label>
                   <select className="form-select" value={course.category} onChange={e => setCourse({...course, category: e.target.value})}>
                     {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>

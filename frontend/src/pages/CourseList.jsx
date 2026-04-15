@@ -67,7 +67,7 @@ const CourseList = () => {
             
             {/* Category Filter */}
             <div className="filter-group" style={{ marginBottom: '1.5rem' }}>
-              <h4 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.75rem' }}>Danh mục</h4>
+              <h4 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.75rem' }}>Chủ đề</h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {CATEGORIES.map(c => (
                   <label key={c} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem' }}>

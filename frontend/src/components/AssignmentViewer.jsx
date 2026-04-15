@@ -2,24 +2,29 @@ import React, { useState, useContext } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
 import api from '../services/api';
 import { CheckCircle2, AlertCircle, Clock, Award, ChevronLeft, ChevronRight, Circle } from 'lucide-react';
+import { Confetti, StarRating, MascotMessage } from './FunElements';
 
 const optionLabels = ['A', 'B', 'C', 'D', 'E', 'F'];
 const optionColors = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
 const AssignmentViewer = ({ assignment, onSubmissionSuccess }) => {
   const { user } = useContext(AuthContext);
-  const [answers, setAnswers] = useState({});
-  const [content, setContent] = useState(assignment.my_submission?.content || '');
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  const [activeQIdx, setActiveQIdx] = useState(0);
-  const [submitted, setSubmitted] = useState(false);
-  const [submitResult, setSubmitResult] = useState(null);
 
   const isQuiz = assignment.type === 'quiz';
   const mySub = assignment.my_submission;
   const isPastDue = assignment.due_date && new Date() > new Date(assignment.due_date);
   const questions = assignment.questions || [];
+
+  const [answers, setAnswers] = useState({});
+  const [content, setContent] = useState(mySub?.content || '');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [activeQIdx, setActiveQIdx] = useState(0);
+  // Start in submitted view if student already has a submission for this quiz
+  const [submitted, setSubmitted] = useState(isQuiz && !!mySub);
+  const [submitResult, setSubmitResult] = useState(
+    isQuiz && mySub ? { score: mySub.score, total: assignment.total_points, question_results: null } : null
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -80,8 +85,8 @@ const AssignmentViewer = ({ assignment, onSubmissionSuccess }) => {
         </div>
       )}
 
-      {/* Already submitted result banner */}
-      {mySub && !submitted && (
+      {/* Already submitted result banner — only for non-quiz types */}
+      {mySub && !isQuiz && (
         <div style={{
           background: mySub.status === 'graded' ? '#dcfce7' : '#fef9c3',
           border: `1px solid ${mySub.status === 'graded' ? 'var(--success)' : '#ca8a04'}`,
@@ -102,21 +107,54 @@ const AssignmentViewer = ({ assignment, onSubmissionSuccess }) => {
       {/* ===== POST-SUBMIT RESULT (Quiz) ===== */}
       {submitted && submitResult && (
         <div style={{ marginBottom: '2rem' }}>
+          <Confetti active={submitted && !!submitResult.question_results} />
+
+          {/* Score Card */}
           <div className="card" style={{
-            padding: '2rem', textAlign: 'center', marginBottom: '1.5rem',
-            background: 'linear-gradient(135deg, #dcfce7, #bbf7d0)',
-            border: '1px solid var(--success)'
+            padding: '2rem', textAlign: 'center', marginBottom: '1rem',
+            background: 'linear-gradient(135deg, #fef9c3 0%, #dcfce7 50%, #dbeafe 100%)',
+            border: '2px solid #fde68a', borderRadius: '20px'
           }}>
-            <CheckCircle2 size={48} color="var(--success)" style={{ marginBottom: '0.75rem' }} />
-            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--success)' }}>
-              {submitResult.score} / {submitResult.total} điểm
+            <StarRating score={submitResult.score} total={submitResult.total} />
+            <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#1e293b', margin: '0.5rem 0' }}>
+              {submitResult.score} <span style={{ fontSize: '1.2rem', color: '#64748b' }}>/ {submitResult.total} điểm</span>
             </div>
-            <div style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-              Đúng {submitResult.question_results?.filter(r => r.is_correct).length ?? 0} / {questions.length} câu
+            <div style={{
+              display: 'inline-block', padding: '0.4rem 1.2rem', borderRadius: '99px',
+              background: '#fff', fontWeight: 700, fontSize: '1rem', color: '#374151',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginTop: '0.25rem'
+            }}>
+              ✅ Đúng {submitResult.question_results?.filter(r => r.is_correct).length ?? 0} / {questions.length} câu
             </div>
+            <MascotMessage score={submitResult.score} total={submitResult.total} />
+
+            {/* Submission history */}
+            {mySub && (
+              <div style={{ fontSize: '0.82rem', color: '#64748b', marginTop: '0.5rem' }}>
+                🕐 Nộp lúc: {new Date(mySub.submitted_at).toLocaleString('vi-VN')}
+                {mySub.status === 'graded' && mySub.feedback && (
+                  <div style={{ marginTop: '0.25rem', fontStyle: 'italic' }}>📝 {mySub.feedback}</div>
+                )}
+              </div>
+            )}
+
+            {/* Làm lại button */}
+            <button
+              type="button"
+              onClick={() => { setSubmitted(false); setAnswers({}); setSubmitResult(null); setActiveQIdx(0); setError(''); }}
+              style={{
+                marginTop: '1rem', padding: '0.6rem 1.5rem', borderRadius: '99px',
+                background: 'linear-gradient(135deg, #7c3aed, #4f46e5)', color: '#fff',
+                border: 'none', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(99,102,241,0.3)'
+              }}
+            >
+              🔄 Làm lại
+            </button>
           </div>
 
-          {/* Show each question with result */}
+          {/* Show each question with result — only available for fresh submissions */}
+          {submitResult.question_results ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {questions.map((q, i) => {
               const chosen = answers[q.id];
@@ -162,6 +200,11 @@ const AssignmentViewer = ({ assignment, onSubmissionSuccess }) => {
               );
             })}
           </div>
+          ) : (
+            <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '0.9rem', padding: '1rem', background: 'var(--bg)', borderRadius: '10px', border: '1px dashed var(--border)' }}>
+              💡 Làm lại bài để xem chi tiết từng câu
+            </div>
+          )}
         </div>
       )}
 
@@ -202,40 +245,56 @@ const AssignmentViewer = ({ assignment, onSubmissionSuccess }) => {
               {questions[activeQIdx] && (() => {
                 const q = questions[activeQIdx];
                 return (
-                  <div className="card" style={{ padding: '1.75rem', marginBottom: '1rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
-                      <h4 style={{ fontSize: '1.1rem', fontWeight: 700, flex: 1 }}>
-                        Câu {activeQIdx + 1}. {q.question_text}
+                  <div className="card" style={{ padding: '1.75rem', marginBottom: '1rem', borderRadius: '16px', border: '2px solid var(--border)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.25rem', alignItems: 'flex-start' }}>
+                      <h4 style={{ fontSize: '1.15rem', fontWeight: 800, flex: 1, lineHeight: 1.5 }}>
+                        <span style={{ color: 'var(--primary)', marginRight: '0.5rem' }}>Câu {activeQIdx + 1}.</span>
+                        {q.question_text}
                       </h4>
-                      <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', flexShrink: 0, marginLeft: '1rem' }}>{q.points} điểm</span>
+                      <span style={{
+                        background: '#fef9c3', color: '#92400e', fontWeight: 700,
+                        fontSize: '0.85rem', padding: '0.25rem 0.6rem', borderRadius: '99px',
+                        flexShrink: 0, marginLeft: '1rem', border: '1px solid #fde68a'
+                      }}>🏅 {q.points} điểm</span>
                     </div>
+                    <style>{`
+                      @keyframes optionBounce {
+                        0%   { transform: scale(1); }
+                        40%  { transform: scale(1.04); }
+                        100% { transform: scale(1); }
+                      }
+                    `}</style>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
                       {q.options?.map((opt, oIdx) => {
                         const isChosen = answers[q.id] === oIdx;
                         return (
                           <label key={oIdx} style={{
                             display: 'flex', alignItems: 'center', gap: '0.75rem',
-                            padding: '0.85rem 1.1rem', borderRadius: '10px', cursor: 'pointer',
+                            padding: '0.9rem 1.1rem', borderRadius: '12px', cursor: 'pointer',
                             background: isChosen ? 'var(--primary-light)' : 'var(--bg)',
                             border: isChosen ? '2px solid var(--primary)' : '1px solid var(--border)',
-                            transition: 'all 0.15s'
+                            animation: isChosen ? 'optionBounce 0.25s ease' : 'none',
+                            boxShadow: isChosen ? '0 4px 12px rgba(99,102,241,0.2)' : '0 1px 3px rgba(0,0,0,0.04)',
+                            transition: 'background 0.15s, border 0.15s, box-shadow 0.15s',
                           }}>
                             <div style={{
-                              width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                              width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
                               background: isChosen ? 'var(--primary)' : optionColors[oIdx],
                               color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontWeight: 800, fontSize: '0.85rem'
+                              fontWeight: 900, fontSize: '1rem',
+                              boxShadow: isChosen ? '0 2px 8px rgba(99,102,241,0.4)' : 'none',
+                              transition: 'all 0.15s'
                             }}>
                               {optionLabels[oIdx]}
                             </div>
-                            <span style={{ flex: 1, fontSize: '1rem' }}>{opt}</span>
+                            <span style={{ flex: 1, fontSize: '1rem', fontWeight: isChosen ? 700 : 400 }}>{opt}</span>
                             <input
                               type="radio" name={`q_${q.id}`} value={oIdx}
                               checked={isChosen}
                               onChange={() => setAnswers(prev => ({ ...prev, [q.id]: oIdx }))}
                               style={{ display: 'none' }}
                             />
-                            {isChosen && <CheckCircle2 size={18} color="var(--primary)" />}
+                            {isChosen && <span style={{ fontSize: 20 }}>✅</span>}
                           </label>
                         );
                       })}
@@ -251,7 +310,7 @@ const AssignmentViewer = ({ assignment, onSubmissionSuccess }) => {
                           Câu tiếp <ChevronRight size={16} />
                         </button>
                       ) : (
-                        <span style={{ fontSize: '0.85rem', color: 'var(--success)', fontWeight: 600 }}>Câu cuối cùng 🎉</span>
+                        <span style={{ fontSize: '0.85rem', color: 'var(--success)', fontWeight: 600 }}>Câu cuối cùng</span>
                       )}
                     </div>
                   </div>
