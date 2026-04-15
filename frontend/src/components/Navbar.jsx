@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
 import { LangContext } from '../contexts/LangContext';
 import { GraduationCap, BookOpen, LogOut, MessageSquare, User, ChevronDown, Globe, Calendar } from 'lucide-react';
+import { assetUrl } from '../services/api';
 
 const Navbar = () => {
   const { user, logout } = useContext(AuthContext);
