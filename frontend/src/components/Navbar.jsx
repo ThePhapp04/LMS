@@ -23,7 +23,7 @@ const Navbar = () => {
   const isActive = (path) => location.pathname === path;
 
   const initial = user?.name?.charAt(0)?.toUpperCase() || '?';
-  const avatarUrl = user?.avatar_url ? `http://localhost:5000${user.avatar_url}` : null;
+  const avatarUrl = user?.avatar_url ? assetUrl(user.avatar_url) : null;
   
   // Determine courses path based on user role
   const coursesPath = user?.role === 'lecturer' ? '/instructor/dashboard' : '/courses';

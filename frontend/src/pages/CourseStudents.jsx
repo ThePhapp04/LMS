@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
+import { assetUrl } from '../services/api';
 import { AuthContext } from '../contexts/AuthContext';
 import { ArrowLeft, Users, BookOpen, CheckCircle2, Clock, TrendingUp, Eye, Search } from 'lucide-react';
 
@@ -160,7 +161,7 @@ const CourseStudents = () => {
               <tbody>
                 {filteredStudents.map((student) => {
                   const progress = parseFloat(student.progress_percentage) || 0;
-                  const avatarUrl = student.avatar_url ? `http://localhost:5000${student.avatar_url}` : null;
+                  const avatarUrl = student.avatar_url ? assetUrl(student.avatar_url) : null;
                   const initial = student.name.charAt(0).toUpperCase();
 
                   return (

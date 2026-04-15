@@ -2,6 +2,7 @@ import React, { useState, useContext } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
 import { useLang } from '../contexts/LangContext';
 import api from '../services/api';
+import { assetUrl } from '../services/api';
 import { User, Mail, Shield, Camera, Lock, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 
 const ROLE_LABELS = { student: 'Học viên / Student', lecturer: 'Giảng viên / Lecturer', admin: 'Quản trị viên / Admin' };
@@ -27,7 +28,7 @@ const Profile = () => {
   const [error, setError] = useState('');
 
   const initial = user?.name?.charAt(0)?.toUpperCase() || '?';
-  const avatarSrc = avatarPreview || (user?.avatar_url ? `http://localhost:5000${user.avatar_url}?t=${avatarTimestamp}` : null);
+  const avatarSrc = avatarPreview || (user?.avatar_url ? `${assetUrl(user.avatar_url)}?t=${avatarTimestamp}` : null);
 
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];

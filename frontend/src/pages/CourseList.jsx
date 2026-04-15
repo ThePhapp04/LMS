@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useContext } from 'react';
 import api from '../services/api';
+import { assetUrl } from '../services/api';
 import { AuthContext } from '../contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, BookOpen, Users, GraduationCap, Star, Filter } from 'lucide-react';
@@ -129,7 +130,7 @@ const CourseList = () => {
                 <div key={course.id} className="course-card">
                   <div className="course-card-thumb" style={{ height: '140px' }}>
                     {course.thumbnail_url
-                      ? <img src={`http://localhost:5000${course.thumbnail_url}`} alt={course.title} />
+                      ? <img src={assetUrl(course.thumbnail_url)} alt={course.title} />
                       : <GraduationCap size={40} />
                     }
                     <span className="badge badge-primary" style={{ position: 'absolute', top: 10, left: 10 }}>{course.category}</span>

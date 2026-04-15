@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { assetUrl } from '../services/api';
 import { AuthContext } from '../contexts/AuthContext';
 import { ArrowLeft, FileText, CheckCircle, Clock, Send, Download, Eye, Award } from 'lucide-react';
 
@@ -360,7 +361,7 @@ const AssignmentGrading = () => {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <FileText size={20} style={{ color: 'var(--primary)' }} />
                         <a
-                          href={`http://localhost:5000${selectedSubmission.file_url}`}
+                          href={assetUrl(selectedSubmission.file_url)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="btn btn-sm btn-secondary"

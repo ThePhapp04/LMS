@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { assetUrl } from '../services/api';
 import { AuthContext } from '../contexts/AuthContext';
 import { ArrowLeft, Plus, Trash2, CheckCircle, X, Upload, FileText, Clock, Award } from 'lucide-react';
 
@@ -321,7 +322,7 @@ const AssignmentDetail = () => {
                   <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.5rem' }}>Bài làm của bạn:</h3>
                   <p style={{ whiteSpace: 'pre-wrap', marginBottom: '0.5rem' }}>{assignment.my_submission.content}</p>
                   {assignment.my_submission.file_url && (
-                    <a href={`http://localhost:5000${assignment.my_submission.file_url}`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm">
+                    <a href={assetUrl(assignment.my_submission.file_url)} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm">
                       <FileText size={14} /> Xem file đã nộp
                     </a>
                   )}
@@ -415,7 +416,7 @@ const AssignmentDetail = () => {
                           <p style={{ whiteSpace: 'pre-wrap' }}>{sub.content}</p>
                         </div>
                         {sub.file_url && (
-                          <a href={`http://localhost:5000${sub.file_url}`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm">
+                          <a href={assetUrl(sub.file_url)} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm">
                             <FileText size={14} /> Xem file
                           </a>
                         )}

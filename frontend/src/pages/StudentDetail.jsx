@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
+import { assetUrl } from '../services/api';
 import { AuthContext } from '../contexts/AuthContext';
 import { ArrowLeft, CheckCircle2, Circle, Award, FileText, Calendar, TrendingUp, Eye } from 'lucide-react';
 
@@ -46,7 +47,7 @@ const StudentDetail = () => {
     });
   };
 
-  const avatarUrl = data.student.avatar_url ? `http://localhost:5000${data.student.avatar_url}` : null;
+  const avatarUrl = data.student.avatar_url ? assetUrl(data.student.avatar_url) : null;
   const initial = data.student.name.charAt(0).toUpperCase();
 
   // Group lessons by chapter

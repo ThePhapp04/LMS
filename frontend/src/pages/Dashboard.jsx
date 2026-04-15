@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
+import { assetUrl } from '../services/api';
 import { BookOpen, GraduationCap, TrendingUp, PlusCircle } from 'lucide-react';
 
 const Dashboard = () => {
@@ -121,7 +122,7 @@ const Dashboard = () => {
                     <div key={course.id} className="course-card">
                       <div className="course-card-thumb">
                         {course.thumbnail_url
-                          ? <img src={`http://localhost:5000${course.thumbnail_url}`} alt={course.title} />
+                          ? <img src={assetUrl(course.thumbnail_url)} alt={course.title} />
                           : <GraduationCap size={48} />
                         }
                       </div>
@@ -159,7 +160,7 @@ const Dashboard = () => {
                     <div key={course.id} className="course-card">
                       <div className="course-card-thumb">
                         {course.thumbnail_url
-                          ? <img src={`http://localhost:5000${course.thumbnail_url}`} alt={course.title} />
+                          ? <img src={assetUrl(course.thumbnail_url)} alt={course.title} />
                           : <BookOpen size={48} />
                         }
                       </div>

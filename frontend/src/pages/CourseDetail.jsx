@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
+import { assetUrl } from '../services/api';
 import { AuthContext } from '../contexts/AuthContext';
 import { PlayCircle, FileText, FileVideo, CheckCircle2, Users, BookOpen, GraduationCap, Star, ArrowLeft, Clock } from 'lucide-react';
 
@@ -159,7 +160,7 @@ const CourseDetail = () => {
                 <iframe src={`https://www.youtube.com/embed/${ytId}`} allowFullScreen style={{ width: '100%', height: '100%', border: 'none' }} />
               ) : (
                 course.thumbnail_url 
-                  ? <img src={`http://localhost:5000${course.thumbnail_url}`} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8 }} /> 
+                  ? <img src={assetUrl(course.thumbnail_url)} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8 }} /> 
                   : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'rgba(255,255,255,0.5)' }}><PlayCircle size={48} /></div>
               )}
             </div>

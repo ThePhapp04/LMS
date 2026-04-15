@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
+import { assetUrl } from '../services/api';
 import { AuthContext } from '../contexts/AuthContext';
 import {
   FileText, FileVideo, Circle, ArrowLeft, Download, Link2, BookOpen, ClipboardList, Check
@@ -192,7 +193,7 @@ const CourseLearning = () => {
                   {!ytId && activeLesson.file_type === 'video' && activeLesson.file_url && (
                     <div className="video-embed" style={{ boxShadow: 'var(--shadow-lg)' }}>
                       <video controls style={{ width: '100%', height: '100%' }}>
-                        <source src={`http://localhost:5000${activeLesson.file_url}`} />
+                        <source src={assetUrl(activeLesson.file_url)} />
                       </video>
                     </div>
                   )}
@@ -215,7 +216,7 @@ const CourseLearning = () => {
                             <div style={{ fontWeight: 600, fontSize: '1rem' }}>
                               📄 {activeLesson.file_name || 'Tài liệu PDF'}
                             </div>
-                            <a href={`http://localhost:5000${activeLesson.file_url}`} download className="btn btn-secondary btn-sm">
+                            <a href={assetUrl(activeLesson.file_url)} download className="btn btn-secondary btn-sm">
                               <Download size={13} /> Tải xuống
                             </a>
                           </div>
@@ -228,7 +229,7 @@ const CourseLearning = () => {
                             boxShadow: 'var(--shadow-lg)'
                           }}>
                             <iframe 
-                              src={`http://localhost:5000${activeLesson.file_url}#view=FitH`}
+                              src={`${assetUrl(activeLesson.file_url)}#view=FitH`}
                               style={{ width: '100%', height: '100%', border: 'none' }}
                               title="PDF Viewer"
                             />
@@ -239,7 +240,7 @@ const CourseLearning = () => {
                           <div className="doc-icon" style={{ background: '#EDE9FE' }}>📝</div>
                           <div style={{ flex: 1 }}>
                             <div style={{ fontWeight: 600, marginBottom: 4 }}>{activeLesson.file_name || 'Tài liệu'}</div>
-                            <a href={`http://localhost:5000${activeLesson.file_url}`} download className="btn btn-secondary btn-sm">
+                            <a href={assetUrl(activeLesson.file_url)} download className="btn btn-secondary btn-sm">
                               <Download size={13} /> Tải xuống
                             </a>
                           </div>

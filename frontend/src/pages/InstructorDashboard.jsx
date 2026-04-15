@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { assetUrl } from '../services/api';
 import { AuthContext } from '../contexts/AuthContext';
 import { Plus, Edit, Trash2, BarChart2, Book, Users, Star } from 'lucide-react';
 
@@ -107,7 +108,7 @@ const InstructorDashboard = () => {
                     <td style={{ padding: '1rem 1.5rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <div style={{ width: 80, height: 45, borderRadius: '4px', background: '#e2e8f0', overflow: 'hidden' }}>
-                          {course.thumbnail_url ? <img src={`http://localhost:5000${course.thumbnail_url}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : ''}
+                          {course.thumbnail_url ? <img src={assetUrl(course.thumbnail_url)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : ''}
                         </div>
                         <div>
                           <Link to={`/courses/${course.id}`} style={{ fontWeight: 600, color: 'var(--text)', textDecoration: 'none' }}>{course.title}</Link>

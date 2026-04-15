@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { assetUrl } from '../services/api';
 import { AuthContext } from '../contexts/AuthContext';
 import { FileEdit, List, DollarSign, CheckCircle, ArrowLeft, Upload, Plus, Trash2, X, Video, File, FileText, ClipboardList, Calendar, Copy, ChevronLeft, ChevronRight, Eye, Save, CheckCircle2, AlertCircle } from 'lucide-react';
 
@@ -436,7 +437,7 @@ const CourseEditor = () => {
                   <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
                     {(thumbnailPreview || (course.thumbnail_url && !thumbnailFile)) && (
                       <img 
-                        src={thumbnailPreview || `http://localhost:5000${course.thumbnail_url}`} 
+                        src={thumbnailPreview || assetUrl(course.thumbnail_url)} 
                         alt="Thumbnail preview"
                         style={{ width: 150, height: 100, objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--border)' }} 
                       />
