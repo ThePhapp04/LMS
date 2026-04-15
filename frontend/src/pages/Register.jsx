@@ -39,7 +39,7 @@ const Register = () => {
             <GraduationCap size={28} color="#fff" />
           </div>
           <h1 className="auth-title">Create account</h1>
-          <p className="auth-subtitle">Join LearnHub today, it's free</p>
+          <p className="auth-subtitle">Join VanAnhLMS today, it's free</p>
         </div>
 
         {error && <div className="alert alert-error">{error}</div>}
