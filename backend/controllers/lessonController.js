@@ -9,7 +9,10 @@ exports.createLesson = async (req, res) => {
     file_name = req.file.originalname;
     const ext = req.file.originalname.split('.').pop().toLowerCase();
     if (['mp4', 'webm', 'mov', 'avi'].includes(ext)) file_type = 'video';
-    else if (['pdf'].includes(ext)) file_type = 'pdf';
+    else if (ext === 'pdf') file_type = 'pdf';
+    else if (['pptx', 'ppt'].includes(ext)) file_type = 'pptx';
+    else if (['docx', 'doc'].includes(ext)) file_type = 'docx';
+    else if (['xlsx', 'xls'].includes(ext)) file_type = 'xlsx';
     else file_type = 'document';
   }
 
@@ -49,7 +52,10 @@ exports.updateLesson = async (req, res) => {
       file_name = req.file.originalname;
       const ext = req.file.originalname.split('.').pop().toLowerCase();
       if (['mp4', 'webm', 'mov', 'avi'].includes(ext)) file_type = 'video';
-      else if (['pdf'].includes(ext)) file_type = 'pdf';
+      else if (ext === 'pdf') file_type = 'pdf';
+      else if (['pptx', 'ppt'].includes(ext)) file_type = 'pptx';
+      else if (['docx', 'doc'].includes(ext)) file_type = 'docx';
+      else if (['xlsx', 'xls'].includes(ext)) file_type = 'xlsx';
       else file_type = 'document';
     }
 

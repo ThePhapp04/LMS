@@ -235,6 +235,59 @@ const CourseLearning = () => {
                             />
                           </div>
                         </div>
+                      ) : (['pptx','ppt'].includes(activeLesson.file_type) || /\.(pptx?)$/i.test(activeLesson.file_url)) ? (
+                        <div style={{ marginBottom: '1.5rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                            <div style={{ fontWeight: 600, fontSize: '1rem' }}>
+                              📊 {activeLesson.file_name || 'Bài trình chiếu PowerPoint'}
+                            </div>
+                            <a href={assetUrl(activeLesson.file_url)} download className="btn btn-secondary btn-sm">
+                              <Download size={13} /> Tải xuống
+                            </a>
+                          </div>
+                          <div style={{
+                            width: '100%',
+                            height: '600px',
+                            border: '1px solid var(--border)',
+                            borderRadius: 'var(--radius)',
+                            overflow: 'hidden',
+                            boxShadow: 'var(--shadow-lg)',
+                            background: '#f1f5f9'
+                          }}>
+                            <iframe
+                              src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(assetUrl(activeLesson.file_url))}`}
+                              style={{ width: '100%', height: '100%', border: 'none' }}
+                              title="PowerPoint Viewer"
+                              allowFullScreen
+                            />
+                          </div>
+                        </div>
+                      ) : (['docx','doc'].includes(activeLesson.file_type) || /\.(docx?)$/i.test(activeLesson.file_url)) ? (
+                        <div style={{ marginBottom: '1.5rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                            <div style={{ fontWeight: 600, fontSize: '1rem' }}>
+                              📝 {activeLesson.file_name || 'Tài liệu Word'}
+                            </div>
+                            <a href={assetUrl(activeLesson.file_url)} download className="btn btn-secondary btn-sm">
+                              <Download size={13} /> Tải xuống
+                            </a>
+                          </div>
+                          <div style={{
+                            width: '100%',
+                            height: '600px',
+                            border: '1px solid var(--border)',
+                            borderRadius: 'var(--radius)',
+                            overflow: 'hidden',
+                            boxShadow: 'var(--shadow-lg)',
+                            background: '#f1f5f9'
+                          }}>
+                            <iframe
+                              src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(assetUrl(activeLesson.file_url))}`}
+                              style={{ width: '100%', height: '100%', border: 'none' }}
+                              title="Word Viewer"
+                            />
+                          </div>
+                        </div>
                       ) : (
                         <div className="doc-preview">
                           <div className="doc-icon" style={{ background: '#EDE9FE' }}>📝</div>
