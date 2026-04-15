@@ -51,7 +51,7 @@ const Navbar = () => {
         <div className="nav-brand-icon">
           <GraduationCap size={20} />
         </div>
-        <span className="nav-brand-text">VanAnhLMS</span>
+        <span className="nav-brand-text">VanAnh LMS</span>
       </Link>
 
       <div className="nav-links">
