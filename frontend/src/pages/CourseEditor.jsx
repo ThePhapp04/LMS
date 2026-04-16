@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { assetUrl } from '../services/api';
 import { AuthContext } from '../contexts/AuthContext';
-import { FileEdit, List, DollarSign, CheckCircle, ArrowLeft, Upload, Plus, Trash2, X, Video, File, FileText, ClipboardList, Calendar, Copy, ChevronLeft, ChevronRight, Eye, Save, CheckCircle2, AlertCircle } from 'lucide-react';
+import { FileEdit, List, DollarSign, CheckCircle, ArrowLeft, Upload, Plus, Trash2, X, Video, File, FileText, ClipboardList, Calendar, Copy, ChevronLeft, ChevronRight, Eye, Save, CheckCircle2, AlertCircle, GripVertical, ChevronDown, ChevronUp, Pencil, Check } from 'lucide-react';
 
 const CATEGORIES = ['General', 'Technology', 'Business', 'Design', 'Science', 'Language', 'Arts'];
 const CATEGORY_LABELS = { General: 'Chung', Technology: 'Công nghệ', Business: 'Kinh doanh', Design: 'Thiết kế', Science: 'Khoa học', Language: 'Ngôn ngữ', Arts: 'Nghệ thuật' };
@@ -57,6 +57,19 @@ const CourseEditor = () => {
   const [previewAnswers, setPreviewAnswers] = useState({});
   const [previewSubmitted, setPreviewSubmitted] = useState(false);
 
+  // Toast & Chapter UI State
+  const [toast, setToast] = useState(null);
+  const [addingChapter, setAddingChapter] = useState(false);
+  const [newChapterTitle, setNewChapterTitle] = useState('');
+  const [renamingChapter, setRenamingChapter] = useState(null);
+  const [renamingTitle, setRenamingTitle] = useState('');
+  const [collapsedChapters, setCollapsedChapters] = useState(new Set());
+
+  const showToast = (msg, type = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  };
+
   useEffect(() => {
     if (user && user.role !== 'lecturer' && user.role !== 'admin') {
       navigate('/dashboard');
@@ -98,7 +111,7 @@ const CourseEditor = () => {
         setCourse({ ...course, thumbnail_url: res.data.thumbnail_url });
         setThumbnailFile(null);
         setThumbnailPreview(null);
-        alert('Đã lưu thông tin khóa học');
+        showToast('Đã lưu thông tin khóa học');
       } else {
         const res = await api.post('/courses', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
         navigate(`/instructor/course/${res.data.id}/edit`);
@@ -119,14 +132,34 @@ const CourseEditor = () => {
 
   // Curriculum Handlers (Simplified representations)
   const addChapter = async () => {
-    const title = prompt('Tên chương mới:');
-    if (!title) return;
+    if (!newChapterTitle.trim()) return;
     try {
       if (isEdit) {
-        await api.post('/chapters', { course_id: id, title, chapter_order: chapters.length + 1 });
+        await api.post('/chapters', { course_id: id, title: newChapterTitle.trim(), chapter_order: chapters.length + 1 });
         fetchCourse();
+        setNewChapterTitle('');
+        setAddingChapter(false);
+        showToast('Đã thêm chương mới');
       }
-    } catch { alert('Lỗi tạo chương. Vui lòng lưu thông tin cơ bản trước.')}
+    } catch { showToast('Lỗi tạo chương. Vui lòng lưu thông tin cơ bản trước.', 'error'); }
+  };
+
+  const renameChapter = async (chapId) => {
+    if (!renamingTitle.trim()) { setRenamingChapter(null); return; }
+    try {
+      await api.put(`/chapters/${chapId}`, { title: renamingTitle.trim() });
+      fetchCourse();
+      setRenamingChapter(null);
+      showToast('Đã đổi tên chương');
+    } catch { showToast('Lỗi đổi tên chương', 'error'); }
+  };
+
+  const toggleChapter = (chapId) => {
+    setCollapsedChapters(prev => {
+      const next = new Set(prev);
+      if (next.has(chapId)) next.delete(chapId); else next.add(chapId);
+      return next;
+    });
   };
 
   const deleteChapter = async (chapId) => {
@@ -187,7 +220,7 @@ const CourseEditor = () => {
       closeLessonModal();
       fetchCourse();
     } catch (err) {
-      alert(err.response?.data?.message || 'Lỗi lưu bài học');
+      showToast(err.response?.data?.message || 'Lỗi lưu bài học', 'error');
     } finally {
       setSaving(false);
     }
@@ -250,7 +283,7 @@ const CourseEditor = () => {
       closeAssignmentModal();
       fetchCourse();
     } catch (err) {
-      alert(err.response?.data?.message || 'Lỗi lưu bài tập');
+      showToast(err.response?.data?.message || 'Lỗi lưu bài tập', 'error');
     } finally {
       setSaving(false);
     }
@@ -286,7 +319,7 @@ const CourseEditor = () => {
       setPreviewSubmitted(false);
       setShowQuizBuilder(true);
     } catch (err) {
-      alert('Không thể tải quiz');
+      showToast('Không thể tải quiz', 'error');
     }
   };
 
@@ -356,10 +389,10 @@ const CourseEditor = () => {
     // Validate
     for (let i = 0; i < quizQuestions.length; i++) {
       const q = quizQuestions[i];
-      if (!q.question_text.trim()) return alert(`Câu ${i + 1}: Chưa nhập nội dung câu hỏi`);
+      if (!q.question_text.trim()) { showToast(`Câu ${i + 1}: Chưa nhập nội dung câu hỏi`, 'error'); setActiveQuestionIdx(i); return; }
       const filledOpts = q.options.filter(o => o.trim());
-      if (filledOpts.length < 2) return alert(`Câu ${i + 1}: Cần ít nhất 2 đáp án`);
-      if (q.correct_option >= filledOpts.length) return alert(`Câu ${i + 1}: Đáp án đúng không hợp lệ`);
+      if (filledOpts.length < 2) { showToast(`Câu ${i + 1}: Cần ít nhất 2 đáp án`, 'error'); setActiveQuestionIdx(i); return; }
+      if (q.correct_option >= filledOpts.length) { showToast(`Câu ${i + 1}: Đáp án đúng không hợp lệ`, 'error'); setActiveQuestionIdx(i); return; }
     }
 
     setQuizSaving(true);
@@ -371,10 +404,10 @@ const CourseEditor = () => {
         points: q.points || 10
       }));
       await api.put(`/assignments/${quizBuilderAssignment.id}/questions/bulk`, { questions: cleaned });
-      alert(`Đã lưu ${cleaned.length} câu hỏi thành công!`);
+      showToast(`Đã lưu ${cleaned.length} câu hỏi thành công!`);
       fetchCourse();
     } catch (err) {
-      alert(err.response?.data?.message || 'Lỗi lưu câu hỏi');
+      showToast(err.response?.data?.message || 'Lỗi lưu câu hỏi', 'error');
     } finally {
       setQuizSaving(false);
     }
@@ -391,16 +424,22 @@ const CourseEditor = () => {
       <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
         
         {/* Sidebar Menu */}
-        <div className="card" style={{ width: '250px', flexShrink: 0, padding: '1rem' }}>
-          <div style={{ fontWeight: 800, padding: '0.5rem 1rem', marginBottom: '1rem', borderBottom: '1px solid var(--border)' }}>
-            Quản lý khóa học
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <div className="card" style={{ width: '240px', flexShrink: 0, padding: '1rem' }}>
+          {isEdit && (
+            <div style={{ padding: '0.75rem 1rem', marginBottom: '0.75rem', background: 'var(--surface-2)', borderRadius: '8px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              <div style={{ fontWeight: 700, color: 'var(--text)', marginBottom: '0.25rem', fontSize: '0.85rem' }}>Thống kê nhanh</div>
+              <div>{chapters.length} chương · {chapters.reduce((s, ch) => s + (ch.lessons?.length || 0), 0)} bài học</div>
+            </div>
+          )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
             <button className={`btn ${activeTab === 'basic' ? 'btn-primary' : 'btn-ghost'}`} style={{ justifyContent: 'flex-start' }} onClick={() => setActiveTab('basic')}>
               <FileEdit size={16} /> Thông tin cơ bản
             </button>
             <button className={`btn ${activeTab === 'curriculum' ? 'btn-primary' : 'btn-ghost'}`} style={{ justifyContent: 'flex-start' }} onClick={() => setActiveTab('curriculum')} disabled={!isEdit}>
-              <List size={16} /> Chương trình học (Curriculum)
+              <List size={16} /> Chương trình học
+              {isEdit && chapters.length > 0 && (
+                <span style={{ marginLeft: 'auto', background: activeTab === 'curriculum' ? 'rgba(255,255,255,0.3)' : 'var(--border)', borderRadius: '999px', padding: '0.1rem 0.45rem', fontSize: '0.72rem', fontWeight: 700 }}>{chapters.length}</span>
+              )}
             </button>
             <button className={`btn ${activeTab === 'pricing' ? 'btn-primary' : 'btn-ghost'}`} style={{ justifyContent: 'flex-start' }} onClick={() => setActiveTab('pricing')}>
               <DollarSign size={16} /> Định giá & Cấp độ
@@ -483,142 +522,205 @@ const CourseEditor = () => {
 
             {activeTab === 'curriculum' && (
               <>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <div style={{ marginBottom: '1.5rem' }}>
                   <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Chương trình học</h2>
-                  <button type="button" className="btn btn-secondary" onClick={addChapter}><Plus size={16} /> Thêm Chương</button>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.25rem' }}>
+                    {chapters.length} chương · {chapters.reduce((s, ch) => s + (ch.lessons?.length || 0), 0)} bài học · {chapters.reduce((s, ch) => s + (ch.assignments?.length || 0), 0)} bài tập
+                  </p>
                 </div>
-                
-                {chapters.length === 0 ? (
-                  <div className="empty-state" style={{ background: 'var(--bg)', borderRadius: 'var(--radius)', border: '1px dashed var(--border)' }}>
-                    <div className="empty-state-icon">📚</div>
-                    <h3>Chưa có chương nào</h3>
-                    <p>Hãy bắt đầu bằng cách tạo chương đầu tiên để cấu trúc danh sách bài học.</p>
+
+                {chapters.length === 0 && !addingChapter ? (
+                  <div style={{ textAlign: 'center', padding: '3rem 1rem', background: 'var(--surface)', borderRadius: 'var(--radius)', border: '2px dashed var(--border)' }}>
+                    <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📚</div>
+                    <h3 style={{ fontWeight: 700, marginBottom: '0.5rem' }}>Chưa có chương nào</h3>
+                    <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Tạo chương để bắt đầu cấu trúc khóa học của bạn</p>
+                    <button type="button" className="btn btn-primary" onClick={() => setAddingChapter(true)}>
+                      <Plus size={16} /> Tạo chương đầu tiên
+                    </button>
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    {chapters.map((ch, i) => (
-                      <div key={ch.id} style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)' }}>
-                        <div style={{ background: 'var(--surface-2)', padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontWeight: 700 }}>Chương {i + 1}: {ch.title}</span>
-                          <button type="button" className="btn btn-ghost btn-sm" style={{ color: 'var(--error)' }} onClick={() => deleteChapter(ch.id)}><Trash2 size={16} /></button>
-                        </div>
-                        <div style={{ padding: '1rem' }}>
-                          {/* Lessons Section */}
-                          <div style={{ marginBottom: '1rem' }}>
-                            <div style={{ fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text)', fontSize: '0.9rem' }}>📚 Bài học</div>
-                            {ch.lessons && ch.lessons.length > 0 ? (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                                {ch.lessons.map((lesson, idx) => (
-                                  <div key={lesson.id} style={{ 
-                                    display: 'flex', 
-                                    justifyContent: 'space-between', 
-                                    alignItems: 'center',
-                                    padding: '0.75rem',
-                                    background: 'var(--bg)',
-                                    borderRadius: '4px',
-                                    border: '1px solid var(--border)'
-                                  }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
-                                      {lesson.video_url ? <Video size={16} color="var(--primary)" /> : <File size={16} color="var(--text-muted)" />}
-                                      <div>
-                                        <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{idx + 1}. {lesson.title}</div>
-                                        {lesson.video_url && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>📹 Video: {lesson.video_url.substring(0, 40)}...</div>}
-                                        {lesson.duration && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>⏱️ {lesson.duration} phút</div>}
-                                      </div>
-                                    </div>
-                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                      <button type="button" className="btn btn-ghost btn-sm" onClick={() => openLessonModal(ch.id, lesson)}>Sửa</button>
-                                      <button type="button" className="btn btn-ghost btn-sm" style={{ color: 'var(--error)' }} onClick={() => deleteLesson(lesson.id)}><Trash2 size={14} /></button>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {chapters.map((ch, i) => {
+                      const isCollapsed = collapsedChapters.has(ch.id);
+                      const isRenaming = renamingChapter === ch.id;
+                      const lessonCount = ch.lessons?.length || 0;
+                      const assignCount = ch.assignments?.length || 0;
+                      return (
+                        <div key={ch.id} style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                          {/* Chapter Header */}
+                          <div style={{ background: 'linear-gradient(135deg, var(--surface-2) 0%, var(--surface) 100%)', padding: '0.875rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', borderBottom: isCollapsed ? 'none' : '1px solid var(--border)' }}>
+                            <GripVertical size={18} color="var(--border)" style={{ cursor: 'grab', flexShrink: 0 }} />
+                            <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 800, flexShrink: 0 }}>
+                              {i + 1}
+                            </div>
+                            {isRenaming ? (
+                              <input autoFocus type="text" className="form-input" value={renamingTitle}
+                                onChange={e => setRenamingTitle(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter') renameChapter(ch.id); if (e.key === 'Escape') setRenamingChapter(null); }}
+                                style={{ flex: 1, padding: '0.375rem 0.625rem', fontSize: '0.95rem', fontWeight: 600 }}
+                              />
                             ) : (
-                              <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontStyle: 'italic', marginBottom: '0.75rem' }}>Chưa có bài học nào</div>
+                              <span style={{ flex: 1, fontWeight: 700, fontSize: '0.95rem' }} onDoubleClick={() => { setRenamingChapter(ch.id); setRenamingTitle(ch.title); }} title="Double-click để đổi tên">
+                                {ch.title}
+                              </span>
                             )}
-                            <button type="button" className="btn btn-secondary btn-sm" onClick={() => openLessonModal(ch.id)}>
-                              <Plus size={14} /> Thêm bài học
-                            </button>
+                            {!isRenaming && (
+                              <div style={{ display: 'flex', gap: '0.375rem', flexShrink: 0 }}>
+                                <span style={{ fontSize: '0.72rem', padding: '0.15rem 0.55rem', borderRadius: '999px', background: '#dbeafe', color: '#1d4ed8', fontWeight: 700 }}>{lessonCount} bài</span>
+                                {assignCount > 0 && <span style={{ fontSize: '0.72rem', padding: '0.15rem 0.55rem', borderRadius: '999px', background: '#dcfce7', color: '#15803d', fontWeight: 700 }}>{assignCount} bài tập</span>}
+                              </div>
+                            )}
+                            <div style={{ display: 'flex', gap: '0.2rem', flexShrink: 0 }}>
+                              {isRenaming ? (
+                                <>
+                                  <button type="button" className="btn btn-success btn-sm" style={{ padding: '0.3rem 0.5rem' }} onClick={() => renameChapter(ch.id)}><Check size={14} /></button>
+                                  <button type="button" className="btn btn-ghost btn-sm" style={{ padding: '0.3rem 0.5rem' }} onClick={() => setRenamingChapter(null)}><X size={14} /></button>
+                                </>
+                              ) : (
+                                <>
+                                  <button type="button" className="btn btn-ghost btn-sm" style={{ padding: '0.3rem 0.5rem' }} title="Đổi tên" onClick={() => { setRenamingChapter(ch.id); setRenamingTitle(ch.title); }}><Pencil size={14} /></button>
+                                  <button type="button" className="btn btn-ghost btn-sm" style={{ padding: '0.3rem 0.5rem', color: 'var(--error)' }} onClick={() => deleteChapter(ch.id)}><Trash2 size={14} /></button>
+                                  <button type="button" className="btn btn-ghost btn-sm" style={{ padding: '0.3rem 0.5rem' }} onClick={() => toggleChapter(ch.id)}>{isCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}</button>
+                                </>
+                              )}
+                            </div>
                           </div>
 
-                          {/* Assignments Section */}
-                          <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
-                            <div style={{ fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text)', fontSize: '0.9rem' }}>📝 Bài tập / Quiz</div>
-                            {ch.assignments && ch.assignments.length > 0 ? (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                                {ch.assignments.map((assignment, idx) => (
-                                  <div key={assignment.id} style={{ 
-                                    display: 'flex', 
-                                    justifyContent: 'space-between', 
-                                    alignItems: 'center',
-                                    padding: '0.75rem',
-                                    background: 'var(--bg)',
-                                    borderRadius: '4px',
-                                    border: '1px solid var(--border)'
-                                  }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
-                                      {assignment.type === 'quiz' ? 
-                                        <ClipboardList size={16} color="var(--success)" /> : 
-                                        <FileText size={16} color="var(--warning)" />
-                                      }
-                                      <div>
-                                        <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{idx + 1}. {assignment.title}</div>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', gap: '1rem' }}>
-                                          <span>{assignment.type === 'quiz' ? '📋 Quiz' : '📄 Essay'}</span>
-                                          <span>🎯 {assignment.total_points} điểm</span>
-                                          {assignment.due_date && <span>📅 {new Date(assignment.due_date).toLocaleDateString('vi-VN')}</span>}
+                          {/* Chapter Body */}
+                          {!isCollapsed && (
+                            <div style={{ padding: '1rem', background: 'var(--bg)' }}>
+                              {/* Lessons */}
+                              <div style={{ marginBottom: '1rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.625rem' }}>
+                                  <span style={{ fontWeight: 700, fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>📹 Bài học</span>
+                                  <button type="button" className="btn btn-primary btn-sm" onClick={() => openLessonModal(ch.id)}><Plus size={13} /> Thêm bài học</button>
+                                </div>
+                                {ch.lessons?.length > 0 ? (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    {ch.lessons.map((lesson, idx) => (
+                                      <div key={lesson.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', background: 'var(--surface)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                                        <GripVertical size={16} color="var(--border)" style={{ cursor: 'grab', flexShrink: 0 }} />
+                                        <div style={{ width: 32, height: 32, borderRadius: '8px', flexShrink: 0, background: lesson.video_url ? '#dbeafe' : lesson.file_url ? '#ede9fe' : '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                          {lesson.video_url ? <Video size={16} color="#2563eb" /> : lesson.file_url ? <File size={16} color="#7c3aed" /> : <FileText size={16} color="#6b7280" />}
+                                        </div>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                          <div style={{ fontWeight: 600, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{idx + 1}. {lesson.title}</div>
+                                          <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem', flexWrap: 'wrap' }}>
+                                            {lesson.duration && <span>⏱ {lesson.duration} phút</span>}
+                                            {lesson.file_name && <span>📎 {lesson.file_name}</span>}
+                                            {lesson.video_url && <span>📹 Video</span>}
+                                          </div>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '0.25rem', flexShrink: 0 }}>
+                                          <button type="button" className="btn btn-ghost btn-sm" style={{ padding: '0.3rem 0.6rem' }} onClick={() => openLessonModal(ch.id, lesson)}><Pencil size={13} /></button>
+                                          <button type="button" className="btn btn-ghost btn-sm" style={{ padding: '0.3rem 0.6rem', color: 'var(--error)' }} onClick={() => deleteLesson(lesson.id)}><Trash2 size={13} /></button>
                                         </div>
                                       </div>
-                                    </div>
-                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                      {assignment.type === 'quiz' && (
-                                        <button 
-                                          type="button" 
-                                          className="btn btn-success btn-sm"
-                                          onClick={() => openQuizBuilder(assignment)}
-                                        >
-                                          <ClipboardList size={14} /> Soạn câu hỏi
-                                        </button>
-                                      )}
-                                      <button 
-                                        type="button" 
-                                        className="btn btn-primary btn-sm"
-                                        onClick={() => navigate(`/assignments/${assignment.id}`)}
-                                      >
-                                        Chi tiết
-                                      </button>
-                                      <button type="button" className="btn btn-ghost btn-sm" onClick={() => openAssignmentModal(ch.id, assignment)}>Sửa</button>
-                                      <button type="button" className="btn btn-ghost btn-sm" style={{ color: 'var(--error)' }} onClick={() => deleteAssignment(assignment.id)}><Trash2 size={14} /></button>
-                                    </div>
+                                    ))}
                                   </div>
-                                ))}
+                                ) : (
+                                  <div onClick={() => openLessonModal(ch.id)} style={{ padding: '1rem', textAlign: 'center', border: '2px dashed var(--border)', borderRadius: '8px', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                                    + Nhấn để thêm bài học đầu tiên
+                                  </div>
+                                )}
                               </div>
-                            ) : (
-                              <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontStyle: 'italic', marginBottom: '0.75rem' }}>Chưa có bài tập nào</div>
-                            )}
-                            <button type="button" className="btn btn-secondary btn-sm" onClick={() => openAssignmentModal(ch.id)}>
-                              <Plus size={14} /> Thêm bài tập / Quiz
-                            </button>
-                          </div>
+
+                              {/* Assignments */}
+                              <div style={{ borderTop: '1px dashed var(--border)', paddingTop: '1rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.625rem' }}>
+                                  <span style={{ fontWeight: 700, fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>📝 Bài tập & Quiz</span>
+                                  <button type="button" className="btn btn-ghost btn-sm" style={{ border: '1px solid var(--border)' }} onClick={() => openAssignmentModal(ch.id)}><Plus size={13} /> Thêm bài tập</button>
+                                </div>
+                                {ch.assignments?.length > 0 && (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    {ch.assignments.map((assignment) => (
+                                      <div key={assignment.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', background: 'var(--surface)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                                        <div style={{ width: 32, height: 32, borderRadius: '8px', flexShrink: 0, background: assignment.type === 'quiz' ? '#dcfce7' : '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                          {assignment.type === 'quiz' ? <ClipboardList size={16} color="#15803d" /> : <FileText size={16} color="#b45309" />}
+                                        </div>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                          <div style={{ fontWeight: 600, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{assignment.title}</div>
+                                          <div style={{ display: 'flex', gap: '0.5rem', fontSize: '0.75rem', marginTop: '0.15rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                                            <span style={{ padding: '0.1rem 0.5rem', borderRadius: '999px', background: assignment.type === 'quiz' ? '#dcfce7' : '#fef3c7', color: assignment.type === 'quiz' ? '#15803d' : '#b45309', fontWeight: 600 }}>{assignment.type === 'quiz' ? 'Quiz' : 'Tự luận'}</span>
+                                            <span style={{ color: 'var(--text-muted)' }}>🎯 {assignment.total_points} điểm</span>
+                                            {assignment.due_date && <span style={{ color: 'var(--text-muted)' }}>📅 {new Date(assignment.due_date).toLocaleDateString('vi-VN')}</span>}
+                                          </div>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '0.25rem', flexShrink: 0 }}>
+                                          {assignment.type === 'quiz' && (
+                                            <button type="button" className="btn btn-success btn-sm" style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem' }} onClick={() => openQuizBuilder(assignment)}><ClipboardList size={13} /> Soạn</button>
+                                          )}
+                                          <button type="button" className="btn btn-ghost btn-sm" style={{ padding: '0.3rem 0.6rem' }} onClick={() => openAssignmentModal(ch.id, assignment)}><Pencil size={13} /></button>
+                                          <button type="button" className="btn btn-ghost btn-sm" style={{ padding: '0.3rem 0.6rem', color: 'var(--error)' }} onClick={() => deleteAssignment(assignment.id)}><Trash2 size={13} /></button>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                    {/* Inline Add Chapter */}
+                    {addingChapter ? (
+                      <div style={{ padding: '1rem', border: '2px solid var(--primary)', borderRadius: 'var(--radius)', background: 'var(--primary-light)' }}>
+                        <div style={{ fontWeight: 700, marginBottom: '0.75rem', fontSize: '0.9rem' }}>Thêm chương mới</div>
+                        <div style={{ display: 'flex', gap: '0.75rem' }}>
+                          <input autoFocus type="text" className="form-input" placeholder="VD: Giới thiệu khóa học"
+                            value={newChapterTitle} onChange={e => setNewChapterTitle(e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter') addChapter(); if (e.key === 'Escape') { setAddingChapter(false); setNewChapterTitle(''); } }}
+                            style={{ flex: 1 }}
+                          />
+                          <button type="button" className="btn btn-primary" onClick={addChapter} disabled={!newChapterTitle.trim()}><Check size={16} /> Thêm</button>
+                          <button type="button" className="btn btn-ghost" onClick={() => { setAddingChapter(false); setNewChapterTitle(''); }}><X size={16} /></button>
                         </div>
                       </div>
-                    ))}
+                    ) : (
+                      <button type="button" className="btn btn-ghost" style={{ width: '100%', padding: '0.875rem', border: '2px dashed var(--border)', borderRadius: 'var(--radius)', color: 'var(--text-muted)', justifyContent: 'center' }} onClick={() => setAddingChapter(true)}>
+                        <Plus size={16} /> Thêm chương mới
+                      </button>
+                    )}
                   </div>
                 )}
               </>
             )}
 
-            {activeTab === 'publish' && (
-              <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
-                <CheckCircle size={64} color="var(--success)" style={{ marginBottom: '1rem' }} />
-                <h2 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '1rem' }}>Sẵn sàng xuất bản!</h2>
-                <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>Khóa học của bạn đã có đủ thông tin cơ bản. Bạn có thể cho phép học viên đăng ký ngay bây giờ.</p>
-                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                  <button type="button" className="btn btn-ghost" onClick={() => navigate(`/courses/${id}`)}>Xem trước (Preview)</button>
-                  <button type="button" className="btn btn-primary btn-lg" onClick={() => alert('Khóa học đã online!')}>Xuất bản (Publish)</button>
+            {activeTab === 'publish' && (() => {
+              const checks = [
+                { label: 'Đã có tiêu đề khóa học', done: !!course.title },
+                { label: 'Đã có mô tả chi tiết', done: !!course.description },
+                { label: 'Đã có ảnh thumbnail', done: !!course.thumbnail_url },
+                { label: 'Ít nhất 1 chương học', done: chapters.length > 0 },
+                { label: 'Ít nhất 1 bài học', done: chapters.some(ch => ch.lessons?.length > 0) },
+              ];
+              const allDone = checks.every(c => c.done);
+              return (
+                <div>
+                  <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.5rem' }}>Xuất bản khóa học</h2>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Kiểm tra các điều kiện trước khi xuất bản</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', marginBottom: '2rem' }}>
+                    {checks.map((item, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', padding: '0.875rem 1rem', background: item.done ? '#f0fdf4' : 'var(--surface)', borderRadius: '10px', border: `1px solid ${item.done ? '#86efac' : 'var(--border)'}` }}>
+                        <div style={{ width: 24, height: 24, borderRadius: '50%', background: item.done ? '#22c55e' : 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          {item.done ? <Check size={14} color="#fff" /> : <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#fff' }} />}
+                        </div>
+                        <span style={{ fontWeight: 600, color: item.done ? '#15803d' : 'var(--text-muted)' }}>{item.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                    <button type="button" className="btn btn-ghost" onClick={() => navigate(`/courses/${id}`)}>👁 Xem trước</button>
+                    <button type="button" className="btn btn-primary btn-lg" disabled={!allDone} onClick={() => showToast('Khóa học đã được xuất bản! 🎉')} title={!allDone ? 'Hoàn thành tất cả điều kiện trước khi xuất bản' : ''}>
+                      <CheckCircle size={18} /> Xuất bản khóa học
+                    </button>
+                  </div>
+                  {!allDone && <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.75rem' }}>Vui lòng hoàn thành tất cả điều kiện để có thể xuất bản.</p>}
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </form>
         </div>
       </div>
@@ -1223,6 +1325,21 @@ const CourseEditor = () => {
               </div>
             </div>
           )}
+        </div>
+      )}
+      {/* Toast Notification */}
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: '1.5rem', right: '1.5rem', zIndex: 9999,
+          padding: '0.875rem 1.25rem',
+          background: toast.type === 'success' ? '#16a34a' : toast.type === 'error' ? '#dc2626' : '#d97706',
+          color: '#fff', borderRadius: '10px', boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+          display: 'flex', alignItems: 'center', gap: '0.625rem',
+          fontSize: '0.9rem', fontWeight: 600, maxWidth: '360px',
+          animation: 'slideInRight 0.3s ease'
+        }}>
+          {toast.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+          {toast.msg}
         </div>
       )}
     </div>
