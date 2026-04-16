@@ -5,13 +5,7 @@ const path = require('path');
 const { getCourses, getCourseById, createCourse, updateCourse, deleteCourse } = require('../controllers/courseController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
-const storage = multer.diskStorage({
-  destination(req, file, cb) { cb(null, 'uploads/'); },
-  filename(req, file, cb) {
-    cb(null, `thumb-${Date.now()}${path.extname(file.originalname)}`);
-  }
-});
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
 router.route('/')
   .get(protect, getCourses)

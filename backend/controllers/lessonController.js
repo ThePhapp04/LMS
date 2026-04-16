@@ -1,19 +1,27 @@
 const db = require('../config/db');
+const path = require('path');
+const { uploadToStorage } = require('../config/storage');
+
+function getFileType(originalname) {
+  const ext = originalname.split('.').pop().toLowerCase();
+  if (['mp4', 'webm', 'mov', 'avi', 'mkv'].includes(ext)) return 'video';
+  if (ext === 'pdf') return 'pdf';
+  if (['pptx', 'ppt'].includes(ext)) return 'pptx';
+  if (['docx', 'doc'].includes(ext)) return 'docx';
+  if (['xlsx', 'xls'].includes(ext)) return 'xlsx';
+  return 'document';
+}
 
 exports.createLesson = async (req, res) => {
   const { course_id, chapter_id, title, content, video_url, lesson_order, duration } = req.body;
   let file_url = null, file_name = null, file_type = null;
 
   if (req.file) {
-    file_url = `/uploads/${req.file.filename}`;
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    const storageName = `lesson-${Date.now()}${ext}`;
+    file_url = await uploadToStorage(req.file.buffer, 'lesson-files', storageName, req.file.mimetype);
     file_name = req.file.originalname;
-    const ext = req.file.originalname.split('.').pop().toLowerCase();
-    if (['mp4', 'webm', 'mov', 'avi'].includes(ext)) file_type = 'video';
-    else if (ext === 'pdf') file_type = 'pdf';
-    else if (['pptx', 'ppt'].includes(ext)) file_type = 'pptx';
-    else if (['docx', 'doc'].includes(ext)) file_type = 'docx';
-    else if (['xlsx', 'xls'].includes(ext)) file_type = 'xlsx';
-    else file_type = 'document';
+    file_type = getFileType(req.file.originalname);
   }
 
   try {
@@ -48,15 +56,11 @@ exports.updateLesson = async (req, res) => {
 
     let file_url = lesson[0].file_url, file_name = lesson[0].file_name, file_type = lesson[0].file_type;
     if (req.file) {
-      file_url = `/uploads/${req.file.filename}`;
+      const ext = path.extname(req.file.originalname).toLowerCase();
+      const storageName = `lesson-${Date.now()}${ext}`;
+      file_url = await uploadToStorage(req.file.buffer, 'lesson-files', storageName, req.file.mimetype);
       file_name = req.file.originalname;
-      const ext = req.file.originalname.split('.').pop().toLowerCase();
-      if (['mp4', 'webm', 'mov', 'avi'].includes(ext)) file_type = 'video';
-      else if (ext === 'pdf') file_type = 'pdf';
-      else if (['pptx', 'ppt'].includes(ext)) file_type = 'pptx';
-      else if (['docx', 'doc'].includes(ext)) file_type = 'docx';
-      else if (['xlsx', 'xls'].includes(ext)) file_type = 'xlsx';
-      else file_type = 'document';
+      file_type = getFileType(req.file.originalname);
     }
 
     await db.query(

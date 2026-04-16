@@ -3,3 +3,29 @@
 .env.*
 backend/.env
 frontend/.env
+.node_modules/
+node_modules/
+**/node_modules/
+# Ignore build artifacts
+dist/
+build/
+# Ignore logs
+logs/
+*.log
+# Ignore IDE files
+.vscode/
+.idea/
+# Ignore OS files
+.DS_Store
+Thumbs.db
+# Ignore coverage reports
+coverage/
+# Ignore temporary files
+*.tmp
+# Ignore lock files
+package-lock.json
+yarn.lock
+# Ignore test results
+test-results/
+# Ignore generated files
+*.generated.js

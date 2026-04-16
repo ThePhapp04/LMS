@@ -80,7 +80,12 @@ exports.updateProfile = async (req, res) => {
 
     // Handle avatar upload
     let avatar_url = user.avatar_url;
-    if (req.file) avatar_url = `/uploads/${req.file.filename}`;
+    if (req.file) {
+      const { uploadToStorage } = require('../config/storage');
+      const path = require('path');
+      const ext = path.extname(req.file.originalname).toLowerCase();
+      avatar_url = await uploadToStorage(req.file.buffer, 'avatars', `avatar-${Date.now()}${ext}`, req.file.mimetype);
+    }
 
     // Handle password change
     let hashedPassword = user.password;

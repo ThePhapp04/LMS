@@ -6,7 +6,12 @@ const api = axios.create({
   baseURL: BASE_URL + '/api',
 });
 
-export const assetUrl = (path) => `${BASE_URL}${path}`;
+// If path is already a full URL (Supabase), return as-is; otherwise prepend backend base URL
+export const assetUrl = (path) => {
+  if (!path) return '';
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  return `${BASE_URL}${path}`;
+};
 
 api.interceptors.request.use(
   (config) => {

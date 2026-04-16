@@ -102,7 +102,10 @@ exports.createCourse = async (req, res) => {
   const { title, description, category, price, level } = req.body;
   let thumbnail_url = null;
   if (req.file) {
-    thumbnail_url = `/uploads/${req.file.filename}`;
+    const { uploadToStorage } = require('../config/storage');
+    const path = require('path');
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    thumbnail_url = await uploadToStorage(req.file.buffer, 'avatars', `thumb-${Date.now()}${ext}`, req.file.mimetype);
   }
   try {
     const [result] = await db.query(
@@ -125,7 +128,12 @@ exports.updateCourse = async (req, res) => {
     }
 
     let thumbnail_url = course[0].thumbnail_url;
-    if (req.file) thumbnail_url = `/uploads/${req.file.filename}`;
+    if (req.file) {
+      const { uploadToStorage } = require('../config/storage');
+      const path = require('path');
+      const ext = path.extname(req.file.originalname).toLowerCase();
+      thumbnail_url = await uploadToStorage(req.file.buffer, 'avatars', `thumb-${Date.now()}${ext}`, req.file.mimetype);
+    }
 
     await db.query(
       'UPDATE courses SET title=?, description=?, category=?, thumbnail_url=?, price=?, level=? WHERE id=?',

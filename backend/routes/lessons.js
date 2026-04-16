@@ -5,15 +5,8 @@ const path = require('path');
 const { createLesson, updateLesson, deleteLesson, markProgress, getProgressForCourse } = require('../controllers/lessonController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
-const storage = multer.diskStorage({
-  destination(req, file, cb) { cb(null, 'uploads/'); },
-  filename(req, file, cb) {
-    cb(null, `lesson-${Date.now()}${path.extname(file.originalname).toLowerCase()}`);
-  }
-});
-
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 500 * 1024 * 1024 }, // 500 MB for video
   fileFilter(req, file, cb) {
     const allowed = [
