@@ -21,6 +21,7 @@ import Profile from './pages/Profile';
 import AssignmentDetail from './pages/AssignmentDetail';
 import { useContext } from 'react';
 import { AuthContext } from './contexts/AuthContext';
+import AiChat from './components/AiChat';
 
 function PrivateRoute({ children, allowLearningLayout = false }) {
   const { user, loading } = useContext(AuthContext);
@@ -39,8 +40,7 @@ function App() {
       <div className="app-container">
         <Navbar />
         <main className="main-layout">
-          <Routes>
-            <Route path="/" element={<Landing />} />
+          <Routes>            <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
@@ -66,6 +66,7 @@ function App() {
             <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
           </Routes>
         </main>
+        <AiChat />
       </div>
     </Router>
   );

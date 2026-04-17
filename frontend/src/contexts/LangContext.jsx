@@ -149,6 +149,15 @@ const translations = {
     level_beginner: 'Cơ bản',
     level_intermediate: 'Trung cấp',
     level_advanced: 'Nâng cao',
+
+    // AI Chat
+    ai_chat_title: 'Trợ lý AI',
+    ai_chat_placeholder: 'Hỏi bất cứ điều gì... (Enter để gửi)',
+    ai_chat_typing: 'Đang soạn...',
+    ai_chat_online: 'Trực tuyến',
+    ai_chat_clear: 'Xóa lịch sử',
+    ai_chat_empty_title: 'Tôi có thể giúp gì cho bạn?',
+    ai_chat_empty_sub: 'Hãy hỏi về khóa học, bài tập hoặc bất kỳ chủ đề học thuật nào.',
   },
   en: {
     // Navbar
@@ -298,6 +307,15 @@ const translations = {
     level_beginner: 'Beginner',
     level_intermediate: 'Intermediate',
     level_advanced: 'Advanced',
+
+    // AI Chat
+    ai_chat_title: 'AI Assistant',
+    ai_chat_placeholder: 'Ask anything... (Enter to send)',
+    ai_chat_typing: 'Typing...',
+    ai_chat_online: 'Online',
+    ai_chat_clear: 'Clear chat',
+    ai_chat_empty_title: 'How can I help you?',
+    ai_chat_empty_sub: 'Ask me about your courses, assignments, or any academic topic.',
   },
 };
 
