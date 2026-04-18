@@ -142,7 +142,7 @@ export default function AiChat() {
                   {t('ai_chat_title') || 'AI Assistant'}
                 </div>
                 <div className="ai-chat-header-subtitle">
-                  Gemini 2.5 Flash · {loading ? (t('ai_chat_typing') || 'Typing...') : (t('ai_chat_online') || 'Online')}
+                  Gemini · {loading ? (t('ai_chat_typing') || 'Typing...') : (t('ai_chat_online') || 'Online')}
                 </div>
               </div>
             </div>
@@ -173,8 +173,8 @@ export default function AiChat() {
                 </p>
                 <div className="ai-chat-suggestions">
                   {(lang === 'vi'
-                    ? ['Giải thích khái niệm OOP', 'Viết hàm tính fibonacci', 'SQL JOIN là gì?']
-                    : ['Explain OOP concepts', 'Write a fibonacci function', 'What is SQL JOIN?']
+                    ? ['Học liệu điện tử là gì?', 'Học liệu điện tử có lợi gì?']
+                    : ['Explain e-learning materials', 'What are the benefits of e-learning materials?']
                   ).map((s) => (
                     <button
                       key={s}

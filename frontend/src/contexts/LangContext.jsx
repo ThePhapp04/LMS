@@ -151,7 +151,7 @@ const translations = {
     level_advanced: 'Nâng cao',
 
     // AI Chat
-    ai_chat_title: 'Trợ lý AI',
+    ai_chat_title: 'AI chat',
     ai_chat_placeholder: 'Hỏi bất cứ điều gì... (Enter để gửi)',
     ai_chat_typing: 'Đang soạn...',
     ai_chat_online: 'Trực tuyến',

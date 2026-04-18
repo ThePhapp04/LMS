@@ -441,11 +441,11 @@ const CourseEditor = () => {
                 <span style={{ marginLeft: 'auto', background: activeTab === 'curriculum' ? 'rgba(255,255,255,0.3)' : 'var(--border)', borderRadius: '999px', padding: '0.1rem 0.45rem', fontSize: '0.72rem', fontWeight: 700 }}>{chapters.length}</span>
               )}
             </button>
-            <button className={`btn ${activeTab === 'pricing' ? 'btn-primary' : 'btn-ghost'}`} style={{ justifyContent: 'flex-start' }} onClick={() => setActiveTab('pricing')}>
-              <DollarSign size={16} /> Định giá & Cấp độ
-            </button>
             <button className={`btn ${activeTab === 'publish' ? 'btn-success' : 'btn-ghost'}`} style={{ justifyContent: 'flex-start' }} onClick={() => setActiveTab('publish')} disabled={!isEdit}>
-              <CheckCircle size={16} /> Xuất bản
+              <CheckCircle size={16} /> Xem trước
+            </button>
+            <button className={`btn ${activeTab === 'pricing' ? 'btn-primary' : 'btn-ghost'}`} style={{ justifyContent: 'flex-start' }} onClick={() => setActiveTab('pricing')}>
+              <DollarSign size={16} /> Mức độ
             </button>
           </div>
         </div>
