@@ -171,9 +171,14 @@ const CourseDetail = () => {
               </div>
 
               {isOwner ? (
-                <Link to={`/instructor/course/${id}/edit`} className="btn btn-secondary btn-lg btn-block" style={{ marginBottom: '1rem' }}>
-                  Chỉnh sửa khóa học
-                </Link>
+                <>
+                  <Link to={`/courses/${id}/learn`} className="btn btn-primary btn-lg btn-block" style={{ marginBottom: '0.75rem' }}>
+                    Xem bài học
+                  </Link>
+                  <Link to={`/instructor/course/${id}/edit`} className="btn btn-secondary btn-lg btn-block" style={{ marginBottom: '1rem' }}>
+                    Chỉnh sửa khóa học
+                  </Link>
+                </>
               ) : isEnrolled ? (
                 <Link to={`/courses/${id}/learn`} className="btn btn-primary btn-lg btn-block" style={{ marginBottom: '1rem' }}>
                   Tiếp tục học (Continue)
