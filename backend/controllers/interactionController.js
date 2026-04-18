@@ -42,7 +42,7 @@ exports.getComments = async (req, res) => {
       FROM comments c
       JOIN users u ON c.user_id = u.id
       WHERE c.lesson_id = ?
-      ORDER BY c.created_at DESC
+      ORDER BY COALESCE(c.parent_id, c.id), c.created_at ASC
     `, [req.params.lessonId]);
     res.json(comments);
   } catch (error) {
@@ -51,19 +51,17 @@ exports.getComments = async (req, res) => {
 };
 
 exports.addComment = async (req, res) => {
-  const { content } = req.body;
+  const { content, parent_id } = req.body;
   const lesson_id = parseInt(req.params.lessonId, 10);
   const user_id = req.user?.id;
-
-  console.log('[addComment] body:', req.body, '| lesson_id:', lesson_id, '| user_id:', user_id);
 
   if (!content) return res.status(400).json({ message: 'Content is required' });
   if (!user_id) return res.status(401).json({ message: 'Not authenticated' });
 
   try {
     const [result] = await db.query(
-      'INSERT INTO comments (user_id, lesson_id, content) VALUES (?, ?, ?) RETURNING id',
-      [user_id, lesson_id, content]
+      'INSERT INTO comments (user_id, lesson_id, content, parent_id) VALUES (?, ?, ?, ?) RETURNING id',
+      [user_id, lesson_id, content, parent_id || null]
     );
 
     const [newComment] = await db.query(`

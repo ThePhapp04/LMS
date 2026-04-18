@@ -15,6 +15,17 @@ function getYoutubeId(url) {
   return match ? match[1] : null;
 }
 
+function timeAgo(dateStr) {
+  const now = new Date();
+  const d = new Date(dateStr);
+  const diff = Math.floor((now - d) / 1000);
+  if (diff < 60) return 'Vừa xong';
+  if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
+  if (diff < 2592000) return `${Math.floor(diff / 86400)} ngày trước`;
+  return d.toLocaleDateString('vi-VN');
+}
+
 function LessonTypeIcon({ lesson }) {
   if (lesson.video_url || lesson.file_type === 'video') return <FileVideo size={14} color="var(--accent)" />;
   if (lesson.file_url) return <FileText size={14} color="var(--warning)" />;
@@ -35,6 +46,8 @@ const CourseLearning = () => {
   const [notes, setNotes] = useState('');
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [replyContent, setReplyContent] = useState('');
   const [showCompleteToast, setShowCompleteToast] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
 
@@ -44,6 +57,8 @@ const CourseLearning = () => {
 
   useEffect(() => {
     if (activeLesson) {
+      setReplyingTo(null);
+      setReplyContent('');
       if (activeLesson.item_type === 'assignment') {
         fetchFullAssignment(activeLesson.id);
       } else {
@@ -107,10 +122,23 @@ const CourseLearning = () => {
     if (!newComment.trim()) return;
     try {
       const res = await api.post(`/interactions/comments/${activeLesson.id}`, { content: newComment });
-      setComments([res.data, ...comments]);
+      setComments(prev => [res.data, ...prev]);
       setNewComment('');
     } catch {
       alert('Failed to post comment');
+    }
+  };
+
+  const submitReply = async (e, parentId) => {
+    e.preventDefault();
+    if (!replyContent.trim()) return;
+    try {
+      const res = await api.post(`/interactions/comments/${activeLesson.id}`, { content: replyContent, parent_id: parentId });
+      setComments(prev => [...prev, res.data]);
+      setReplyContent('');
+      setReplyingTo(null);
+    } catch {
+      alert('Failed to post reply');
     }
   };
 
@@ -321,23 +349,97 @@ const CourseLearning = () => {
                     )}
                     {activeTab === 'comments' && (
                       <div className="card" style={{ padding: '1.5rem' }}>
-                        <form onSubmit={submitComment} style={{ display: 'flex', gap: '0.75rem', marginBottom: '2rem' }}>
-                          <input type="text" className="form-input" style={{ flex: 1 }} value={newComment} onChange={e => setNewComment(e.target.value)} placeholder="Đặt câu hỏi hoặc thảo luận..." />
-                          <button type="submit" className="btn btn-primary">Gửi</button>
-                        </form>
-                        <div className="comments-list" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                          {comments.map(c => (
-                            <div key={c.id} style={{ display: 'flex', gap: '1rem' }}>
-                              <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
-                                {c.user_name[0].toUpperCase()}
+                        {/* Write comment */}
+                        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '1.5rem' }}>
+                          <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.9rem', flexShrink: 0 }}>
+                            {user?.name?.[0]?.toUpperCase() || 'U'}
+                          </div>
+                          <form onSubmit={submitComment} style={{ flex: 1, display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                            <input
+                              type="text"
+                              className="form-input"
+                              style={{ flex: 1, borderRadius: '20px', padding: '0.5rem 1rem' }}
+                              value={newComment}
+                              onChange={e => setNewComment(e.target.value)}
+                              placeholder="Viết bình luận..."
+                            />
+                            {newComment.trim() && (
+                              <button type="submit" className="btn btn-primary btn-sm" style={{ borderRadius: '20px', whiteSpace: 'nowrap' }}>Gửi</button>
+                            )}
+                          </form>
+                        </div>
+                        {/* Comments list */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                          {comments.filter(c => !c.parent_id).map(c => {
+                            const replies = comments.filter(r => r.parent_id === c.id);
+                            const isReplying = replyingTo === c.id;
+                            return (
+                              <div key={c.id}>
+                                <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start' }}>
+                                  <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.9rem', flexShrink: 0 }}>
+                                    {c.user_name[0].toUpperCase()}
+                                  </div>
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ background: 'var(--bg)', borderRadius: '12px', padding: '0.6rem 0.875rem', display: 'inline-block', maxWidth: '100%' }}>
+                                      <div style={{ fontWeight: 700, fontSize: '0.88rem', marginBottom: 2 }}>{c.user_name}</div>
+                                      <div style={{ fontSize: '0.95rem', color: 'var(--text)' }}>{c.content}</div>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '1rem', marginTop: '0.25rem', paddingLeft: '0.5rem', alignItems: 'center' }}>
+                                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{timeAgo(c.created_at)}</span>
+                                      <button
+                                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700, color: isReplying ? 'var(--primary)' : 'var(--text-muted)', padding: 0 }}
+                                        onClick={() => { setReplyingTo(isReplying ? null : c.id); setReplyContent(''); }}
+                                      >Phản hồi</button>
+                                    </div>
+                                    {/* Replies */}
+                                    {replies.length > 0 && (
+                                      <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                                        {replies.map(r => (
+                                          <div key={r.id} style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                                            <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.8rem', flexShrink: 0 }}>
+                                              {r.user_name[0].toUpperCase()}
+                                            </div>
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                              <div style={{ background: 'var(--bg)', borderRadius: '12px', padding: '0.5rem 0.875rem', display: 'inline-block', maxWidth: '100%' }}>
+                                                <div style={{ fontWeight: 700, fontSize: '0.83rem', marginBottom: 2 }}>{r.user_name}</div>
+                                                <div style={{ fontSize: '0.9rem', color: 'var(--text)' }}>{r.content}</div>
+                                              </div>
+                                              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.2rem', paddingLeft: '0.5rem' }}>{timeAgo(r.created_at)}</div>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                    {/* Reply input */}
+                                    {isReplying && (
+                                      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem', alignItems: 'center' }}>
+                                        <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.8rem', flexShrink: 0 }}>
+                                          {user?.name?.[0]?.toUpperCase() || 'U'}
+                                        </div>
+                                        <form onSubmit={(e) => submitReply(e, c.id)} style={{ flex: 1, display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                          <input
+                                            type="text"
+                                            className="form-input"
+                                            style={{ flex: 1, borderRadius: '20px', padding: '0.4rem 0.875rem', fontSize: '0.9rem' }}
+                                            value={replyContent}
+                                            onChange={e => setReplyContent(e.target.value)}
+                                            placeholder={`Phản hồi ${c.user_name}...`}
+                                            autoFocus
+                                          />
+                                          {replyContent.trim() && (
+                                            <button type="submit" className="btn btn-primary btn-sm" style={{ borderRadius: '20px', whiteSpace: 'nowrap' }}>Gửi</button>
+                                          )}
+                                        </form>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
-                              <div>
-                                <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{c.user_name} <span style={{ fontSize: '0.8rem', fontWeight: 400, color: 'var(--text-muted)', marginLeft: 8 }}>{new Date(c.created_at).toLocaleDateString()}</span></div>
-                                <div style={{ fontSize: '1rem', color: 'var(--text)', marginTop: 4 }}>{c.content}</div>
-                              </div>
-                            </div>
-                          ))}
-                          {comments.length === 0 && <div style={{ color: 'var(--text-muted)' }}>Chưa có thảo luận nào. Hãy đặt câu hỏi!</div>}
+                            );
+                          })}
+                          {comments.filter(c => !c.parent_id).length === 0 && (
+                            <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '1.5rem 0' }}>Chưa có thảo luận nào. Hãy đặt câu hỏi!</div>
+                          )}
                         </div>
                       </div>
                     )}

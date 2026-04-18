@@ -110,9 +110,11 @@ async function initializeDB() {
         user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         lesson_id INT NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
         content TEXT NOT NULL,
+        parent_id INT REFERENCES comments(id) ON DELETE SET NULL,
         created_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
+    await pool.query(`ALTER TABLE comments ADD COLUMN IF NOT EXISTS parent_id INT REFERENCES comments(id) ON DELETE SET NULL`);
 
     // Forum Topics
     await pool.query(`
