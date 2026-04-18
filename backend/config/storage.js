@@ -1,39 +1,49 @@
-const { createClient } = require('@supabase/supabase-js');
+const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
+const s3 = new S3Client({
+  region: 'auto',
+  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID,
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+  },
+});
+
+const R2_BUCKET = process.env.R2_BUCKET_NAME;
+const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL;
 
 /**
- * Upload a buffer/stream to Supabase Storage
+ * Upload a buffer to Cloudflare R2
  * @param {Buffer} buffer - File data
- * @param {string} bucket - Bucket name (e.g. 'lesson-files', 'avatars')
- * @param {string} filePath - Path inside bucket (e.g. 'lesson-1234.pptx')
+ * @param {string} folder - Logical folder (e.g. 'lesson-files', 'avatars')
+ * @param {string} filePath - Filename inside folder
  * @param {string} mimeType - MIME type
  * @returns {string} Public URL
  */
-async function uploadToStorage(buffer, bucket, filePath, mimeType) {
-  const { error } = await supabase.storage
-    .from(bucket)
-    .upload(filePath, buffer, {
-      contentType: mimeType,
-      upsert: true,
-    });
+async function uploadToStorage(buffer, folder, filePath, mimeType) {
+  const key = `${folder}/${filePath}`;
 
-  if (error) throw new Error(`Storage upload failed: ${error.message}`);
+  await s3.send(new PutObjectCommand({
+    Bucket: R2_BUCKET,
+    Key: key,
+    Body: buffer,
+    ContentType: mimeType,
+  }));
 
-  const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
-  return data.publicUrl;
+  return `${R2_PUBLIC_URL}/${key}`;
 }
 
 /**
- * Delete a file from Supabase Storage
- * @param {string} bucket
- * @param {string} filePath - Path inside bucket
+ * Delete a file from Cloudflare R2
+ * @param {string} folder
+ * @param {string} filePath
  */
-async function deleteFromStorage(bucket, filePath) {
-  await supabase.storage.from(bucket).remove([filePath]);
+async function deleteFromStorage(folder, filePath) {
+  const key = `${folder}/${filePath}`;
+  await s3.send(new DeleteObjectCommand({
+    Bucket: R2_BUCKET,
+    Key: key,
+  }));
 }
 
 module.exports = { uploadToStorage, deleteFromStorage };

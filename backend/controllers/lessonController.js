@@ -17,11 +17,12 @@ exports.createLesson = async (req, res) => {
   let file_url = null, file_name = null, file_type = null;
 
   if (req.file) {
-    const ext = path.extname(req.file.originalname).toLowerCase();
+    const originalName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
+    const ext = path.extname(originalName).toLowerCase();
     const storageName = `lesson-${Date.now()}${ext}`;
     file_url = await uploadToStorage(req.file.buffer, 'lesson-files', storageName, req.file.mimetype);
-    file_name = req.file.originalname;
-    file_type = getFileType(req.file.originalname);
+    file_name = originalName;
+    file_type = getFileType(originalName);
   }
 
   try {
@@ -56,11 +57,12 @@ exports.updateLesson = async (req, res) => {
 
     let file_url = lesson[0].file_url, file_name = lesson[0].file_name, file_type = lesson[0].file_type;
     if (req.file) {
-      const ext = path.extname(req.file.originalname).toLowerCase();
+      const originalName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
+      const ext = path.extname(originalName).toLowerCase();
       const storageName = `lesson-${Date.now()}${ext}`;
       file_url = await uploadToStorage(req.file.buffer, 'lesson-files', storageName, req.file.mimetype);
-      file_name = req.file.originalname;
-      file_type = getFileType(req.file.originalname);
+      file_name = originalName;
+      file_type = getFileType(originalName);
     }
 
     await db.query(

@@ -242,7 +242,7 @@ const CourseLearning = () => {
                         const isDoc = ['docx','doc'].includes(activeLesson.file_type) || /\.docx?$/i.test(activeLesson.file_url);
                         const icon = isPpt ? '📊' : isDoc ? '📝' : '📈';
                         const label = isPpt ? 'Bài trình chiếu' : isDoc ? 'Tài liệu Word' : 'Bảng tính Excel';
-                        const viewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(fullUrl)}&embedded=true`;
+                        const officeViewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fullUrl)}`;
                         return (
                           <div style={{ marginBottom: '1.5rem' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
@@ -266,7 +266,7 @@ const CourseLearning = () => {
                             ) : (
                               <div style={{
                                 width: '100%',
-                                height: '600px',
+                                height: '700px',
                                 border: '1px solid var(--border)',
                                 borderRadius: 'var(--radius)',
                                 overflow: 'hidden',
@@ -274,7 +274,7 @@ const CourseLearning = () => {
                                 background: '#f1f5f9'
                               }}>
                                 <iframe
-                                  src={viewerUrl}
+                                  src={officeViewerUrl}
                                   style={{ width: '100%', height: '100%', border: 'none' }}
                                   title={label}
                                   allowFullScreen
