@@ -50,9 +50,7 @@ const Navbar = () => {
   return (
     <nav className="navbar">
       <Link to="/" className="nav-brand">
-        <div className="nav-brand-icon">
-          <GraduationCap size={20} />
-        </div>
+        <img src="/vinh.svg" alt="logo" style={{ height: 36 }} />
         <span className="nav-brand-text">VanAnh LMS</span>
       </Link>
 
@@ -302,7 +300,7 @@ const Navbar = () => {
       <div className={`nav-mobile-drawer ${showMobileMenu ? 'open' : ''}`}>
         <div className="nav-mobile-header">
           <Link to="/" className="nav-brand" onClick={() => setShowMobileMenu(false)}>
-            <div className="nav-brand-icon"><GraduationCap size={18} /></div>
+            <img src="/vinh.svg" alt="logo" style={{ height: 30 }} />
             <span>VanAnh LMS</span>
           </Link>
           <button className="nav-mobile-close" onClick={() => setShowMobileMenu(false)}>
